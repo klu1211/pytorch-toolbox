@@ -107,18 +107,18 @@ def create_sampler(y=None, sampler_fn=None):
     else:
         pass
 
-    if sampler is not None:
-        label_cnt = Counter()
-        n_samples = len(weights)
-        for idx in np.random.choice(len(y), n_samples, p=weights / weights.sum()):
-            labels = y[idx]
-            for l in labels:
-                label_cnt[l] += 1
-        print("Weighted sampled proportions:")
-        pprint(sorted({k: v / sum(label_cnt.values()) for k, v in label_cnt.items()}.items()))
-        # pprint(sorted({k: v for k, v in name_cnt.items()}.items(), key=lambda x: x[1]))
-    else:
-        print("No weighted sampling")
+    # if sampler is not None:
+    #     label_cnt = Counter()
+    #     n_samples = len(weights)
+    #     for idx in np.random.choice(len(y), n_samples, p=weights / weights.sum()):
+    #         labels = y[idx]
+    #         for l in labels:
+    #             label_cnt[l] += 1
+    #     print("Weighted sampled proportions:")
+    #     pprint(sorted({k: v / sum(label_cnt.values()) for k, v in label_cnt.items()}.items()))
+    #     # pprint(sorted({k: v for k, v in name_cnt.items()}.items(), key=lambda x: x[1]))
+    # else:
+    #     print("No weighted sampling")
     return sampler
 
 
@@ -329,7 +329,7 @@ def main(config_file_path, log_level):
         config = yaml.load(f)
     pipeline_graph = PipelineGraph.create_pipeline_graph_from_config(config)
     print(pipeline_graph.sorted_node_names)
-    pipeline_graph.run_graph(reference_lookup=lookups)
+    pipeline_graph.run(reference_lookup=lookups)
 
 
 if __name__ == '__main__':
