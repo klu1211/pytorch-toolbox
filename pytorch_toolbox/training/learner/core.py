@@ -227,8 +227,8 @@ def fit(epochs: int, model: nn.Module, loss_func: LossFunction, opt: optim.Optim
                 val_loss = None
             if cb_handler.on_epoch_end(val_loss): break
     except Exception as e:
-        exception = e
         raise e
+        logging.error(e, exc_info=True)
     finally:
         cb_handler.on_train_end(exception)
 

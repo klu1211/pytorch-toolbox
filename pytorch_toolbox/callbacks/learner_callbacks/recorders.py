@@ -7,8 +7,9 @@ import numpy as np
 from matplotlib import pyplot as plt
 from torch import Tensor
 from tensorboardX import SummaryWriter
+import mlflow
 
-from pytorch_toolbox.callbacks import LearnerCallback
+from pytorch_toolbox.callbacks import Callback, LearnerCallback
 from pytorch_toolbox.defaults import PBar, MetricsList, TensorOrNumberList, Callable, Optional
 from pytorch_toolbox.utils import range_of, to_numpy, camel2snake, Phase
 
@@ -156,8 +157,8 @@ class Recorder(BaseRecorder):
 
     def on_epoch_end(self, epoch, num_batch, smooth_loss, last_metrics, phase, **kwargs):
         super().on_epoch_end(epoch, num_batch, smooth_loss, last_metrics, **kwargs)
-        if phase == Phase.VAL:
-            metric_names = self.names[3:]
+        metric_names = self.names[3:]
+        if phase == Phase.VAL and len(metric_names) > 0:
             for name, metric in zip(metric_names, self.metrics[epoch - 1]):
                 self.metric_history[self.key][camel2snake(name)].append(metric.item())
 
@@ -201,7 +202,7 @@ class TensorBoardRecorder(LearnerCallback):
         super().__init__(learn)
         log_path = Path(
             self.learn.path if save_path_creator is None else save_path_creator()) / f"{file_name}.log"
-        logging.info(f"To see tensorboard: tensorboard --purge_orphaned_data false --logdir {log_path}")
+        logging.info(f"To see tensorboard:\ntensorboard --purge_orphaned_data false --logdir {log_path}")
         self.tb_writer = SummaryWriter(log_dir=str(log_path))
         self.train_step_idx = 0
         self.val_step_idx = 0
@@ -254,4 +255,31 @@ class TensorBoardRecorder(LearnerCallback):
         self.tb_writer.add_scalars("metrics_for_epoch", self.learn.recorder.get_metrics_for_epoch(epoch),
                                    global_step=epoch)
 
+    def on_train_end(self, **kwargs):
+        self.tb_writer.close()
 
+
+class MLFlowRecorder(LearnerCallback):
+
+    def __init__(self, learn, experiment_path, state_dict):
+        super().__init__(learn)
+        self.state_dict = state_dict
+        logging.info(
+            f"To see experiment:\nmlflow ui --backend-store-uri {str(Path(experiment_path).resolve())} --port 5000")
+        mlflow.set_tracking_uri(str(experiment_path))
+
+    def on_train_begin(self, **kwargs: Any):
+        mlflow.start_run()
+        variables = self.state_dict["raw_config"].get("Variables")
+        if variables is None:
+            pass
+        else:
+            self._record_params(variables)
+
+    def _record_params(self, variables):
+        for variable_group, variables in variables.items():
+            for name, value in variables.items():
+                mlflow.log_param(f"{variable_group}.{name}", value)
+
+    def on_train_end(self, **kwargs: Any):
+        mlflow.end_run()

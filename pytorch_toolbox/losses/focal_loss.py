@@ -74,4 +74,3 @@ def _make_one_hot(input, target):
     target = one_hot.scatter_(1, target.long(), 1)
     return target
 
-jj

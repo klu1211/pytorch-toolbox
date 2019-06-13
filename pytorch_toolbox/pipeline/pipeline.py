@@ -78,6 +78,7 @@ class Pipeline:
             return output_lookup[output_lookup_key]
 
     def run(self, to_node=None):
+        logging.info(self.sorted_node_names)
         logging.info("Running nodes in graph")
         for node_name in nx.algorithms.dag.topological_sort(self.graph):
             logging.debug(f"Processing node: {node_name}")

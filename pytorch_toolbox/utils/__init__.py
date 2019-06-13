@@ -1,3 +1,5 @@
+import time
+import logging
 import re
 from enum import Enum
 
@@ -80,3 +82,14 @@ class Phase(Enum):
     TEST = 3
 
 
+
+def timeit(name):
+    def wrapper(f):
+        def wrapped_f(*args, **kwargs):
+            time_start = time.time()
+            ret = f(*args, **kwargs)
+            time_end = time.time()
+            logging.info(f"{name} took {round((time_end - time_start), 2)} seconds")
+            return ret
+        return wrapped_f
+    return wrapper

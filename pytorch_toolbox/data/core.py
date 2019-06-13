@@ -72,13 +72,15 @@ class DataBunch:
                device: torch.device = None,
                collate_fn: Callable = default_collate) -> 'DataBunch':
 
-        if val_bs is None:
-            val_bs = train_bs * 2
-        if test_bs is None:
-            test_bs = train_bs * 2
+        if val_bs is None: val_bs = train_bs * 2
+        if test_bs is None: test_bs = train_bs * 2
         train_dl = DataLoader(train_ds, train_bs, sampler=sampler, num_workers=num_workers, pin_memory=pin_memory,
                               drop_last=True)
         val_dl = DataLoader(valid_ds, val_bs, shuffle=False, num_workers=num_workers)
-        test_dl = DataLoader(test_ds, test_bs, shuffle=False, num_workers=num_workers)
+
+        if test_ds is None:
+            test_dl = None
+        else:
+            test_dl = DataLoader(test_ds, test_bs, shuffle=False, num_workers=num_workers)
         dls = [train_dl, val_dl, test_dl]
         return cls(*dls, device=device, collate_fn=collate_fn)
