@@ -93,3 +93,28 @@ def timeit(name):
             return ret
         return wrapped_f
     return wrapper
+
+
+import time
+from pathlib import Path
+
+def create_time_stamped_save_path(save_path, state_dict):
+    try:
+        save_path = state_dict["save_path"]
+    except KeyError:
+        state_dict["save_path"] = Path(save_path).resolve()
+    try:
+        current_time = state_dict["start_time"]
+    except KeyError:
+        current_time = f"{time.strftime('%Y%m%d-%H%M%S')}"
+        state_dict["start_time"] = current_time
+
+    current_fold = state_dict.get("current_fold")
+    path = Path(save_path, current_time)
+    if current_fold is not None:
+        path = path / f"Fold_{current_fold}"
+    return path
+
+lookup = {
+    "create_time_stamped_save_path": create_time_stamped_save_path
+}
