@@ -6,8 +6,9 @@ from torch.nn import functional as F
 
 
 class SoftFScoreLoss(BaseLoss):
-    def __init__(self, beta=1):
+    def __init__(self, beta=1, per_sample_loss_aggregate_method="SUM"):
         self.beta = beta
+        self.per_sample_loss_aggregate_method = per_sample_loss_aggregate_method
 
     @property
     def unreduced_loss(self):
@@ -28,8 +29,9 @@ class SoftFScoreLoss(BaseLoss):
         # This returns B x n_classes
         loss = soft_f_score_loss(prediction, target, beta=self.beta)
         self._unreduced_loss = loss
-        self._per_sample_loss = loss
-        self._reduced_loss = loss.mean()
+        self._per_sample_loss = self.reshape_to_batch_size_x_minus_one_aggregate_over_last_dimension(
+            self._unreduced_loss, aggregate_method=self.per_sample_loss_aggregate_method)
+        self._reduced_loss = self._per_sample_loss.mean()
         return self._reduced_loss
 
 
