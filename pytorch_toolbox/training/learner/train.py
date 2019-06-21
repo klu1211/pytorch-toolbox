@@ -21,7 +21,7 @@ def _hyperparameter_value_is_for_layer_groups(hyperparameter_values: Union[List[
     a nested list.
 
     For a learning rate hyperparameter where the model has no layer groups and has a step in epochs 0, 2, 5 and ends with
-    epoch 7:
+    epoch 7`:
 
     hyperparameter_values = [1e-3, 1e-4, 1e-5]
 
