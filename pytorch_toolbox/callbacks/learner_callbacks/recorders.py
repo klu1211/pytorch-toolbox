@@ -281,9 +281,11 @@ class MLFlowRecorder(LearnerCallback):
                     mlflow.log_param(f"{variable_group}.{name}", value)
 
     def on_train_end(self, epoch, **kwargs: Any):
-        self._record_metrics(epoch)
+        self._record_metrics(epoch - 1)
         mlflow.end_run()
 
     def _record_metrics(self, epoch):
         metrics = self.learn.recorder.get_metrics_for_epoch(epoch)
-        print(metrics)
+        for name, value in metrics.items():
+            mlflow.log_param(name, value)
+
