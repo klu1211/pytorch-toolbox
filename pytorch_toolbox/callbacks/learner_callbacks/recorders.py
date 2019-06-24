@@ -194,7 +194,6 @@ class Recorder(BaseRecorder):
         return metrics
 
 
-# TODO: allow recording by batch
 class TensorBoardRecorder(LearnerCallback):
     _order = 10
 
