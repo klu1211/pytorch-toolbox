@@ -5,8 +5,10 @@ from torch.nn import functional as F
 
 from pytorch_toolbox.defaults import default_hardware
 
+from .core import BaseLoss
 
-class SoftDiceLoss:
+
+class SoftDiceLoss(BaseLoss):
     def __init__(self, dice_loss_weights=None, n_classes=2):
         assert n_classes > 1, "Even if it is a binary classification, please use 2 classes instead of one"
         self.dice_loss_weights = dice_loss_weights

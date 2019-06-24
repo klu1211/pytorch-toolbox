@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from functools import partial
 from numbers import Number
@@ -219,7 +220,11 @@ class AverageMetric(Callback):
         if not is_listy(last_target):
             last_target = [last_target]
         self.count += last_target[0].size(0)
-        self.val += last_target[0].size(0) * self.func(last_output, *last_target).detach().cpu()
+        try:
+            self.val += last_target[0].size(0) * self.func(last_output, *last_target).detach().cpu()
+        except TypeError: # catch for multiple arguments
+            logging.warning("There are multiple arguments for the target, so we are assuming the first target is the ground truth of the model")
+            self.val += last_target[0].size(0) * self.func(last_output, last_target[0]).detach().cpu()
 
     def on_epoch_end(self, **kwargs):
         self.metric = self.val / self.count
