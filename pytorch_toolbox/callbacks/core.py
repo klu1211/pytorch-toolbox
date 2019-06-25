@@ -8,14 +8,7 @@ from torch import Tensor
 import numpy as np
 
 from pytorch_toolbox.defaults import PBar, MetricFuncList, StartOptEnd, AnnealFunc
-from pytorch_toolbox.utils import (
-    if_none,
-    camel2snake,
-    is_listy,
-    is_tuple,
-    Phase,
-    listify,
-)
+from pytorch_toolbox.utils import if_none, camel2snake, is_listy, is_tuple, Phase, listify
 
 
 class Callback:
@@ -105,9 +98,11 @@ class CallbackHandler:
     def on_train_begin(self, epochs: int, pbar: PBar, metrics: MetricFuncList) -> None:
         "About to start learning."
         self.state_dict = self._get_init_state()
-        self.state_dict["n_epochs"], self.state_dict["pbar"], self.state_dict[
-            "metrics"
-        ] = (epochs, pbar, metrics)
+        self.state_dict["n_epochs"], self.state_dict["pbar"], self.state_dict["metrics"] = (
+            epochs,
+            pbar,
+            metrics,
+        )
         names = [
             (met.name if hasattr(met, "name") else camel2snake(met.__class__.__name__))
             for met in self.metrics
@@ -207,11 +202,7 @@ class TrackerCallback(LearnerCallback):
         super().__init__(learn)
         self.monitor = monitor
         self.mode = mode
-        assert self.mode in [
-            "auto",
-            "min",
-            "max",
-        ], "Please select a valid model to monitor"
+        assert self.mode in ["auto", "min", "max"], "Please select a valid model to monitor"
         mode_dict = dict(min=np.less, max=np.greater)
         mode_dict["auto"] = np.less if "loss" in self.monitor else np.greater
         self.operator = mode_dict[self.mode]
@@ -220,9 +211,7 @@ class TrackerCallback(LearnerCallback):
         self.best = float("inf") if self.operator == np.less else -float("inf")
 
     def get_monitor_value(self, epoch):
-        return self.learn.recorder.get_losses_and_metrics_for_epoch(epoch).get(
-            self.monitor
-        )
+        return self.learn.recorder.get_losses_and_metrics_for_epoch(epoch).get(self.monitor)
 
 
 class SmoothenValue:
@@ -256,13 +245,9 @@ class AverageMetric(Callback):
         self.count += last_target[0].size(0)
         try:
             self.val += (
-                last_target[0].size(0)
-                * self.func(last_output, *last_target).detach().cpu()
+                last_target[0].size(0) * self.func(last_output, *last_target).detach().cpu()
             )
         except TypeError:  # catch for multiple arguments
-            logging.warning(
-                "There are multiple arguments for the target, so we are assuming the first target is the ground truth of the model"
-            )
             self.val += (
                 last_target[0].size(0)
                 * self.func(last_output, last_target[0]).detach().cpu()
@@ -306,9 +291,7 @@ def annealing_poly(degree: Number) -> Number:
 class Scheduler:
     'Used to "step" from start,end (`vals`) over `n_iter` iterations on a schedule defined by `func`'
 
-    def __init__(
-        self, vals: StartOptEnd, n_iter: int, func: Optional[AnnealFunc] = None
-    ):
+    def __init__(self, vals: StartOptEnd, n_iter: int, func: Optional[AnnealFunc] = None):
         if is_tuple(vals):
             self.start, self.end = (vals[0], vals[1])
         elif is_listy(vals):
