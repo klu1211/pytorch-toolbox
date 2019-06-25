@@ -1,0 +1,1 @@
+This is an example for a bounding box detection pipeline using the Pytorch Toolbox

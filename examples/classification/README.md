@@ -1,0 +1,1 @@
+This is an example for a classification pipeline using the Pytorch Toolbox

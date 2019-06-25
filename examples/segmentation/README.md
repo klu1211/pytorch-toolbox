@@ -1,0 +1,1 @@
+This is an example for a segmentation pipeline using the Pytorch Toolbox
