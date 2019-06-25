@@ -194,7 +194,6 @@ class Recorder(BaseRecorder):
         return metrics
 
 
-# TODO: allow recording by batch
 class TensorBoardRecorder(LearnerCallback):
     _order = 10
 
@@ -210,8 +209,8 @@ class TensorBoardRecorder(LearnerCallback):
 
     def on_batch_end(self, epoch, phase, **kwargs):
         if phase == Phase.TRAIN:
-            self._record_losses_for_step(phase, self.train_step_idx)
             self._record_optimizer_hyperparameters(self.train_step_idx)
+            self._record_losses_for_step(phase, self.train_step_idx)
             self.train_step_idx += 1
         if phase == Phase.VAL:
             self._record_losses_for_step(phase, self.val_step_idx)
@@ -270,16 +269,23 @@ class MLFlowRecorder(LearnerCallback):
 
     def on_train_begin(self, **kwargs: Any):
         mlflow.start_run()
+        self._record_params()
+
+    def _record_params(self):
         variables = self.state_dict["raw_config"].get("Variables")
         if variables is None:
             pass
         else:
-            self._record_params(variables)
+            for variable_group, variables in variables.items():
+                for name, value in variables.items():
+                    mlflow.log_param(f"{variable_group}.{name}", value)
 
-    def _record_params(self, variables):
-        for variable_group, variables in variables.items():
-            for name, value in variables.items():
-                mlflow.log_param(f"{variable_group}.{name}", value)
-
-    def on_train_end(self, **kwargs: Any):
+    def on_train_end(self, epoch, **kwargs: Any):
+        self._record_metrics(epoch - 1)
         mlflow.end_run()
+
+    def _record_metrics(self, epoch):
+        metrics = self.learn.recorder.get_metrics_for_epoch(epoch)
+        for name, value in metrics.items():
+            mlflow.log_param(name, value)
+

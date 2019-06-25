@@ -1,7 +1,129 @@
 from functools import partial
 
+import cv2
 import torch
 import numpy as np
+
+
+def create_u_net_weight_map(mask, w_c=0.5, w_0=10, sigma=5):
+    """
+
+    :param mask:
+    :param w_c:
+    :param w_0:
+    :param sigma:
+    :return:
+    """
+
+    mask_contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    bbox = find_bounding_box_for_mask(mask, mask_contours)
+    background_points = find_background_points_in_bbox(mask, *bbox)
+    weights_for_background_points = calculate_weights_for_background_points(background_points,
+                                                                            mask_contours, w_c, w_0,
+                                                                            sigma)
+    weight_map = create_weight_map(background_points, weights_for_background_points, mask, w_c)
+    return weight_map
+
+
+def find_bounding_box_for_mask(mask, contours, padding=15):
+    max_x = 0
+    min_x = mask.shape[1]
+    max_y = 0
+    min_y = mask.shape[0]
+    for contour in contours:
+        x, y, w, h = cv2.boundingRect(contour)
+        min_x_, max_x_ = min(x, min_x), max(x + w, max_x)
+        min_y_, max_y_ = min(y, min_y), max(y + h, max_y)
+        if min_x_ < min_x:
+            min_x = min_x_
+        if max_x_ > max_x:
+            max_x = max_x_
+        if min_y_ < min_y:
+            min_y = min_y_
+        if max_y_ > max_y:
+            max_y = max_y_
+    return min_x - padding, max_x + padding, min_y - padding, max_y + padding
+
+
+def find_background_points_in_bbox(mask, min_x, max_x, min_y, max_y):
+    y, x = np.where(mask[min_y:max_y, min_x:max_x] == 0)
+    y += min_y
+    x += min_x
+    points = list(zip(y, x))
+    return points
+
+
+def calculate_weights_for_background_points(background_points, mask_contours, w_c, w_0, sigma):
+    weights = []
+    for point in background_points:
+        distances_to_contours = sorted(calculate_distances_to_contour_from_point(point, mask_contours),
+                                       reverse=True)
+        weight = calculate_weight_from_distances(distances_to_contours, w_c, w_0, sigma)
+        weights.append(weight)
+    return weights
+
+
+def calculate_distances_to_contour_from_point(point, contours):
+    distances_to_contours = []
+    for contour in contours:
+        open_cv_point = (point[1], point[0])
+        distance_from_point_to_contour = cv2.pointPolygonTest(contour, open_cv_point, measureDist=True)
+        distances_to_contours.append(distance_from_point_to_contour)
+    return distances_to_contours
+
+
+def calculate_weight_from_distances(distances, w_c, w_0, sigma):
+    if len(distances) == 1:
+        p1 = distances[0]
+        return calculate_weight(p1, w_c=w_c, w_0=w_0, sigma=sigma)
+    else:
+        p1, p2, *_ = distances
+        return calculate_weight(p1 + p2, w_c=w_c, w_0=w_0, sigma=sigma)
+
+
+def calculate_weight(distances, w_c=0.5, w_0=10, sigma=5):
+    exponent = np.exp(-(np.power(distances, 2) / (2 * sigma ** 2)))
+    return w_c + w_0 * exponent
+
+
+def create_weight_map(points, weights, mask, w_c):
+    weight_map = np.zeros_like(mask).astype(np.float32) + w_c
+    for point, weight in zip(points, weights):
+        weight_map[point] = weight
+    return weight_map
+
+
+# def create_u_net_weight_map(mask_slices, w_c=0.5, w_0=10, sigma=5):
+#     """
+#
+#     :param mask_slices: each element in mask_slices is a numpy array of type expects np.uint8
+#     :param w_c:
+#     :param w_0:
+#     :param sigma:
+#     :return:
+#     """
+#     all_weights = []
+#     all_points = []
+#     weight_maps = []
+#     #     print(f"creating weight maps with: w_c={w_c}, w_0={w_0}, sigma={sigma}")
+#     for mask in mask_slices:
+#         mask_contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+#         bbox = find_bounding_box_for_mask(mask, mask_contours)
+#         background_points = find_background_points_in_bbox(mask, *bbox)
+#         weights = []
+#         for point in background_points:
+#             distances_to_contours = sorted(calculate_distances_to_contour_from_point(point, mask_contours),
+#                                            reverse=True)
+#             weight = calculate_weight_from_distances(distances_to_contours, w_c, w_0, sigma)
+#             weights.append(weight)
+#         all_weights.append(weights)
+#         all_points.append(background_points)
+#     for points, weights in zip(all_points, all_weights):
+#         weight_map = np.zeros_like(mask).astype(np.float32) + w_c
+#         for point, weight in zip(points, weights):
+#             weight_map[point] = weight
+#         weight_maps.append(weight_map)
+#     return np.array(weight_maps)
 
 
 def tensor2img(image_tensor, imtype=np.uint8, denormalize_fn=None, scale_factor=255.0):
@@ -27,7 +149,6 @@ def tensor2img(image_tensor, imtype=np.uint8, denormalize_fn=None, scale_factor=
         print("Expected a Tensor of C x H x W or B x C x H x W")
         return
     return (ret * scale_factor).astype(imtype)
-
 
 
 # ref.: https://www.kaggle.com/stainsby/fast-tested-rle

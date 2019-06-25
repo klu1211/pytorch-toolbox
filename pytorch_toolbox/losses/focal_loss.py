@@ -9,9 +9,10 @@ from pytorch_toolbox.utils import timeit, to_numpy
 
 
 class FocalLoss(BaseLoss):
-    def __init__(self, gamma=2, one_hot_encoding=False):
+    def __init__(self, gamma=2, one_hot_encoding=False, per_sample_loss_aggregate_method="SUM"):
         self.gamma = gamma
         self.one_hot_encoding = one_hot_encoding
+        self.per_sample_loss_aggregate_method = per_sample_loss_aggregate_method
         if not one_hot_encoding:
             logging.warning(
                 """
@@ -39,8 +40,8 @@ class FocalLoss(BaseLoss):
         target = yb[0]
         # This returns B x ... (same shape as input)
         self._unreduced_loss = focal_loss(prediction, target, self.gamma, one_hot_encoding=self.one_hot_encoding)
-        self._per_sample_loss = self.reshape_to_batch_size_x_minus_one_and_sum_over_last_dimension(
-            self._unreduced_loss)
+        self._per_sample_loss = self.reshape_to_batch_size_x_minus_one_aggregate_over_last_dimension(
+            self._unreduced_loss, aggregate_method=self.per_sample_loss_aggregate_method)
         self._reduced_loss = self._per_sample_loss.mean()
         return self._reduced_loss
 

@@ -253,6 +253,8 @@ from pytorch_toolbox.losses import BaseLoss
 
 
 class LovaszHingeFlatLoss(BaseLoss):
+    def __init__(self, per_sample_loss_aggregation_method="SUM"):
+        super().__init__(per_sample_loss_aggregation_method=per_sample_loss_aggregation_method)
 
     @property
     def unreduced_loss(self):

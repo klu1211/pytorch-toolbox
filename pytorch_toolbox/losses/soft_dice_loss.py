@@ -5,25 +5,41 @@ from torch.nn import functional as F
 
 from pytorch_toolbox.defaults import default_hardware
 
+from .core import BaseLoss
 
-class SoftDiceLoss:
+
+class SoftDiceLoss(BaseLoss):
     def __init__(self, dice_loss_weights=None, n_classes=2):
         assert n_classes > 1, "Even if it is a binary classification, please use 2 classes instead of one"
         self.dice_loss_weights = dice_loss_weights
         self.n_classes = n_classes
+
+    @property
+    def unreduced_loss(self):
+        return self._unreduced_loss
+
+    @property
+    def per_sample_loss(self):
+        return self._per_sample_loss
+
+    @property
+    def reduced_loss(self):
+        return self._reduced_loss
 
     def __call__(self, out, *yb):
         prediction = out
         target = yb[0]
         loss, individual_losses = dice_loss(prediction, target, self.dice_loss_weights, self.n_classes,
                                             return_individual_losses=True)
-        self.loss = individual_losses
-        return loss
+        self._unreduced_loss = loss
+        self._per_sample_loss = loss
+        self._reduced_loss = loss.mean()
+        return self._reduced_loss
 
 
 def dice_loss(preds, targets, dice_loss_weights=None, n_classes=2, return_individual_losses=False):
     def _set_all_label_weights_to_one():
-        return {i: 1 for i in range(n_classes)}
+        return {f"weight_for_class_{i}": 1 for i in range(n_classes)}
 
     if dice_loss_weights is None:
         dice_loss_weights = _set_all_label_weights_to_one()
@@ -35,11 +51,11 @@ def dice_loss(preds, targets, dice_loss_weights=None, n_classes=2, return_indivi
         class_label = k
         dice_loss_lookup[k] = v * dice_loss_weights[f"weight_for_class_{class_label}"]
 
-    total_dice_loss = torch.mean(torch.stack([loss for loss in dice_loss_lookup.values()]))
+    loss = torch.stack([loss for loss in dice_loss_lookup.values()]).sum(dim=0)
     if return_individual_losses:
-        return total_dice_loss, dice_loss_lookup
+        return loss, dice_loss_lookup
     else:
-        return total_dice_loss
+        return loss
 
 
 def multi_class_dice_loss(pred_logits, targets, n_classes):

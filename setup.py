@@ -15,5 +15,7 @@ setup(name='pytorch_toolbox',
             "miniutils>=1.0.1",
             "pandas>=0.24.2",
             "matplotlib>=3.1.0",
+            "tqdm",
+            "albumentations"
       ],
       zip_safe=False)
