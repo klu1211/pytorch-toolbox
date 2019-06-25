@@ -1,15 +1,26 @@
 import numpy as np
 
 from pytorch_toolbox.defaults import Floats, StartOptEnd, Any
-from pytorch_toolbox.callbacks import Callback, annealing_linear, annealing_cos, Scheduler
+from pytorch_toolbox.callbacks import (
+    Callback,
+    annealing_linear,
+    annealing_cos,
+    Scheduler,
+)
 from pytorch_toolbox.utils import listify, is_listy, Phase
 
 
 class OneCycleScheduler(Callback):
     "Manage 1-Cycle style training as outlined in Leslie Smith's [paper](https://arxiv.org/pdf/1803.09820.pdf)."
 
-    def __init__(self, learn, lr_max: float, moms: Floats = (0.95, 0.85), div_factor: float = 25.,
-                 pct_start: float = 0.3):
+    def __init__(
+        self,
+        learn,
+        lr_max: float,
+        moms: Floats = (0.95, 0.85),
+        div_factor: float = 25.0,
+        pct_start: float = 0.3,
+    ):
         super().__init__()
         self.learn = learn
         self.lr_max = lr_max
@@ -22,8 +33,10 @@ class OneCycleScheduler(Callback):
 
     def steps(self, *steps_cfg: StartOptEnd):
         "Build anneal schedule for all of the parameters."
-        return [Scheduler(step, n_iter, func=func)
-                for (step, (n_iter, func)) in zip(steps_cfg, self.phases)]
+        return [
+            Scheduler(step, n_iter, func=func)
+            for (step, (n_iter, func)) in zip(steps_cfg, self.phases)
+        ]
 
     def on_train_begin(self, n_epochs: int, **kwargs: Any) -> None:
         "Initialize our optimization params based on our annealing schedule."
@@ -41,7 +54,8 @@ class OneCycleScheduler(Callback):
     def on_batch_end(self, phase, **kwargs: Any) -> None:
         "Take one step forward on the annealing schedule for the optim params."
         if phase == Phase.TRAIN:
-            if self.idx_s >= len(self.lr_scheds): return True
+            if self.idx_s >= len(self.lr_scheds):
+                return True
             self.opt.lr = self.lr_scheds[self.idx_s].step()
             self.opt.mom = self.mom_scheds[self.idx_s].step()
             # when the current schedule is complete we move onto the next

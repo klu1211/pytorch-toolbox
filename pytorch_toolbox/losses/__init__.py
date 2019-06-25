@@ -14,5 +14,5 @@ loss_lookup = {
     "SoftFLoss": SoftFScoreLoss,
     "SoftF1Loss": partial(SoftFScoreLoss, beta=1),
     "SoftF2Loss": partial(SoftFScoreLoss, beta=2),
-    "LovaszHingeFlatLoss": LovaszHingeFlatLoss
+    "LovaszHingeFlatLoss": LovaszHingeFlatLoss,
 }

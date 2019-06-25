@@ -34,7 +34,9 @@ def replace_arguments(graph, state_dict, node):
         arguments = node.arguments
         needs_state_dict = "state_dict" in inspect.signature(node.pointer).parameters
         if arguments is not None:
-            reference_replaced_arguments = replace_references(graph, deepcopy(arguments))
+            reference_replaced_arguments = replace_references(
+                graph, deepcopy(arguments)
+            )
             if needs_state_dict:
                 reference_replaced_arguments["state_dict"] = state_dict
             return reference_replaced_arguments
@@ -58,8 +60,12 @@ def replace_references(graph, arguments):
         reference = arguments
         ref_node = graph.nodes(data=True)[reference.ref_node_name]["node"]
         ref_node_outputs = ref_node.output
-        assert ref_node_outputs is not None, f"Node: {reference.ref_node_name} has no output"
-        assert reference.output_name in ref_node_outputs, f"Node: {reference.output_name} has no output named {reference.output_name}"
+        assert (
+            ref_node_outputs is not None
+        ), f"Node: {reference.ref_node_name} has no output"
+        assert (
+            reference.output_name in ref_node_outputs
+        ), f"Node: {reference.output_name} has no output named {reference.output_name}"
         arguments = ref_node_outputs[reference.output_name]
     else:
         return arguments

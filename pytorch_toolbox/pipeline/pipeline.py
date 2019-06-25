@@ -3,20 +3,25 @@ import functools
 import networkx as nx
 
 from .yaml_loader import load_config_from_path, Reference
-from .graph_construction import flatten_resources_dict, find_references, replace_arguments, replace_should_run
+from .graph_construction import (
+    flatten_resources_dict,
+    find_references,
+    replace_arguments,
+    replace_should_run,
+)
 
 
 class Pipeline:
     def __init__(self, graph, config, state_dict={}):
         self.graph = graph
         self.config = config
-        self.state_dict = {
-            **state_dict
-        }
+        self.state_dict = {**state_dict}
 
     @classmethod
     def create_from_config(cls, config, lookup, state_dict={}):
-        assert config.get("Resources") is not None, "There is no Resources key in the configuration file"
+        assert (
+            config.get("Resources") is not None
+        ), "There is no Resources key in the configuration file"
         graph = nx.DiGraph()
         flattened_resources = flatten_resources_dict(config["Resources"])
         graph = cls._add_nodes_to_graph(graph, flattened_resources, lookup)
@@ -24,18 +29,28 @@ class Pipeline:
         return cls(graph, config, state_dict)
 
     @classmethod
-    def create_from_config_path(cls, config_path, lookup, with_variable_replacement=True):
+    def create_from_config_path(
+        cls, config_path, lookup, with_variable_replacement=True
+    ):
         raw_config = load_config_from_path(config_path)
-        replaced_config = load_config_from_path(config_path, with_variable_replacement=with_variable_replacement)
-        return cls.create_from_config(replaced_config, lookup, state_dict=dict(raw_config=raw_config))
+        replaced_config = load_config_from_path(
+            config_path, with_variable_replacement=with_variable_replacement
+        )
+        return cls.create_from_config(
+            replaced_config, lookup, state_dict=dict(raw_config=raw_config)
+        )
 
     @staticmethod
     def _add_nodes_to_graph(graph, resources, lookup):
         logging.info("Adding nodes to graph")
         for name, resource in resources.items():
-            assert "properties" in resource, f"The properties key isn't defined for node: {name}"
+            assert (
+                "properties" in resource
+            ), f"The properties key isn't defined for node: {name}"
             references = find_references(resource)
-            properties = load_properties_with_default_values(resource["properties"], lookup)
+            properties = load_properties_with_default_values(
+                resource["properties"], lookup
+            )
             node = Node(name=name, references=references, **properties)
             graph.add_node(name, node=node)
         return graph
@@ -48,7 +63,9 @@ class Pipeline:
             for reference in node.references:
                 referenced_node_name = reference.ref_node_name
 
-                assert referenced_node_name in graph.nodes, f"The reference: {referenced_node_name} in node: {node.name} does not exist"
+                assert (
+                    referenced_node_name in graph.nodes
+                ), f"The reference: {referenced_node_name} in node: {node.name} does not exist"
 
                 referenced_node = graph.nodes(data=True)[referenced_node_name]["node"]
                 referenced_node.referenced_by.append(node)
@@ -101,7 +118,10 @@ class Pipeline:
         current_node.should_run = current_node_should_run
 
         for referenced_node in current_node.referenced_by:
-            if isinstance(referenced_node.should_run, Reference) or referenced_node.should_run is False:
+            if (
+                isinstance(referenced_node.should_run, Reference)
+                or referenced_node.should_run is False
+            ):
                 continue
             else:
                 referenced_node.should_run = current_node_should_run
@@ -117,13 +137,17 @@ class Pipeline:
     def _replace_node_argument_references(self, node):
         logging.debug(f"Replacing references for node: {node.name}")
         logging.debug(f"Original arguments: {node.arguments}")
-        reference_replaced_arguments = replace_arguments(self.graph, self.state_dict, node)
+        reference_replaced_arguments = replace_arguments(
+            self.graph, self.state_dict, node
+        )
         node.reference_replaced_arguments.update(**reference_replaced_arguments)
         logging.debug(f"Replaced arguments: {node.reference_replaced_arguments}")
 
 
 class Node:
-    def __init__(self, name, references, pointer, partial, arguments, output_names, should_run):
+    def __init__(
+        self, name, references, pointer, partial, arguments, output_names, should_run
+    ):
         self.name = name
         self.references = references
         self.referenced_by = []
@@ -144,16 +168,22 @@ class Node:
         """
 
     def create_output(self):
-        assert not isinstance(self.output_names,
-                              str), f"The output_names for node: {self.name} can't be a string, only a list"
+        assert not isinstance(
+            self.output_names, str
+        ), f"The output_names for node: {self.name} can't be a string, only a list"
 
         self._call_pointer_and_set_output()
 
     def _call_pointer_and_set_output(self):
         if self.partial:
-            assert len(
-                self.output_names) == 1, f"If the output of node: {self.name} is partial, then there should be one output, {len(self.output_names)} outputs are found"
-            self.output = {self.output_names[0]: functools.partial(self.pointer, **self.reference_replaced_arguments)}
+            assert (
+                len(self.output_names) == 1
+            ), f"If the output of node: {self.name} is partial, then there should be one output, {len(self.output_names)} outputs are found"
+            self.output = {
+                self.output_names[0]: functools.partial(
+                    self.pointer, **self.reference_replaced_arguments
+                )
+            }
         else:
             try:
                 output = self.pointer(**self.reference_replaced_arguments)
@@ -163,10 +193,16 @@ class Node:
                 logging.error(e, exc_info=True)
                 exit(1)
             if output is not None:
-                assert len(self.output_names) > 0, f"There are no output_names defined in properties for the node: {self.name}"
+                assert (
+                    len(self.output_names) > 0
+                ), f"There are no output_names defined in properties for the node: {self.name}"
                 iterable_output = [output] if len(self.output_names) == 1 else output
-                self.output = {output_name: output_value for output_name, output_value in
-                               zip(self.output_names, iterable_output)}
+                self.output = {
+                    output_name: output_value
+                    for output_name, output_value in zip(
+                        self.output_names, iterable_output
+                    )
+                }
 
 
 def load_properties_with_default_values(properties, lookups):
@@ -177,5 +213,5 @@ def load_properties_with_default_values(properties, lookups):
         "partial": properties.get("partial", False),
         "arguments": properties.get("arguments", {}),
         "output_names": properties.get("output_names", []),
-        "should_run": properties.get("should_run", True)
+        "should_run": properties.get("should_run", True),
     }

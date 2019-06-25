@@ -3,7 +3,13 @@ from typing import Optional
 import torch
 from torch import nn, Tensor
 
-from pytorch_toolbox.defaults import Tensors, default_hardware, ModuleList, ParamList, List
+from pytorch_toolbox.defaults import (
+    Tensors,
+    default_hardware,
+    ModuleList,
+    ParamList,
+    List,
+)
 from pytorch_toolbox.utils import if_none, is_listy
 
 
@@ -36,7 +42,9 @@ def children(m: nn.Module) -> ModuleList:
     return list(m.children())
 
 
-def split_layers_into_batch_norm_and_non_batch_norm(layer_groups: ModuleList) -> ModuleList:
+def split_layers_into_batch_norm_and_non_batch_norm(
+    layer_groups: ModuleList
+) -> ModuleList:
     "Sort each layer in  `layer_groups` into batchnorm (`bn_types`) and non-batchnorm groups."
     split_groups = []
     for l in layer_groups:
@@ -46,7 +54,10 @@ def split_layers_into_batch_norm_and_non_batch_norm(layer_groups: ModuleList) ->
                 batch_norm_layers.append(c)
             else:
                 non_batch_norm_layers.append(c)
-        split_groups += [nn.Sequential(*non_batch_norm_layers), nn.Sequential(*batch_norm_layers)]
+        split_groups += [
+            nn.Sequential(*non_batch_norm_layers),
+            nn.Sequential(*batch_norm_layers),
+        ]
     return split_groups
 
 
@@ -58,16 +69,20 @@ def trainable_params(m: nn.Module) -> ParamList:
 
 def to_detach(b: Tensors):
     "Recursively detach lists of tensors in `b `"
-    if is_listy(b): return [to_detach(o) for o in b]
+    if is_listy(b):
+        return [to_detach(o) for o in b]
     return b.detach() if isinstance(b, Tensor) else b
 
 
 def requires_grad(m: nn.Module, b: Optional[bool] = None) -> Optional[bool]:
     "If `b` is not set `requires_grad` on all params in `m`, else return `requires_grad` of first param."
     ps = list(m.parameters())
-    if not ps: return None
-    if b is None: return ps[0].requires_grad
-    for p in ps: p.requires_grad = b
+    if not ps:
+        return None
+    if b is None:
+        return ps[0].requires_grad
+    for p in ps:
+        p.requires_grad = b
 
 
 def bn2float(module: nn.Module) -> nn.Module:

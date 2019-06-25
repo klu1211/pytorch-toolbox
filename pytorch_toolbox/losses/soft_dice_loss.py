@@ -10,7 +10,9 @@ from .core import BaseLoss
 
 class SoftDiceLoss(BaseLoss):
     def __init__(self, dice_loss_weights=None, n_classes=2):
-        assert n_classes > 1, "Even if it is a binary classification, please use 2 classes instead of one"
+        assert (
+            n_classes > 1
+        ), "Even if it is a binary classification, please use 2 classes instead of one"
         self.dice_loss_weights = dice_loss_weights
         self.n_classes = n_classes
 
@@ -29,15 +31,22 @@ class SoftDiceLoss(BaseLoss):
     def __call__(self, out, *yb):
         prediction = out
         target = yb[0]
-        loss, individual_losses = dice_loss(prediction, target, self.dice_loss_weights, self.n_classes,
-                                            return_individual_losses=True)
+        loss, individual_losses = dice_loss(
+            prediction,
+            target,
+            self.dice_loss_weights,
+            self.n_classes,
+            return_individual_losses=True,
+        )
         self._unreduced_loss = loss
         self._per_sample_loss = loss
         self._reduced_loss = loss.mean()
         return self._reduced_loss
 
 
-def dice_loss(preds, targets, dice_loss_weights=None, n_classes=2, return_individual_losses=False):
+def dice_loss(
+    preds, targets, dice_loss_weights=None, n_classes=2, return_individual_losses=False
+):
     def _set_all_label_weights_to_one():
         return {f"weight_for_class_{i}": 1 for i in range(n_classes)}
 
@@ -66,15 +75,21 @@ def multi_class_dice_loss(pred_logits, targets, n_classes):
     :return:
     """
 
-    one_hot = torch.FloatTensor(targets.size(0), n_classes, targets.size(2), targets.size(3)).zero_()
-    target_one_hot = one_hot.scatter_(1, targets.cpu().data, 1).to(default_hardware.device)
+    one_hot = torch.FloatTensor(
+        targets.size(0), n_classes, targets.size(2), targets.size(3)
+    ).zero_()
+    target_one_hot = one_hot.scatter_(1, targets.cpu().data, 1).to(
+        default_hardware.device
+    )
     pred_probs = F.softmax(pred_logits, dim=1)
     batch_size = pred_logits.size(0)
     loss_dict = defaultdict(list)
     for batch_idx in range(batch_size):
         for class_i in range(n_classes):
-            loss_for_class_i = single_class_dice_loss(pred_probs[batch_idx, class_i, :, :],
-                                                      target_one_hot[batch_idx, class_i, :, :])
+            loss_for_class_i = single_class_dice_loss(
+                pred_probs[batch_idx, class_i, :, :],
+                target_one_hot[batch_idx, class_i, :, :],
+            )
             loss_dict[class_i].append(loss_for_class_i)
 
     return {k: torch.stack(v) for k, v in loss_dict.items()}
@@ -84,4 +99,7 @@ def single_class_dice_loss(inputs, one_hots):
     inputs_flat = inputs.contiguous().view(-1)
     one_hots_flat = one_hots.contiguous().view(-1)
     intersection = torch.sum(inputs_flat * one_hots_flat)
-    return 1 - ((2 * intersection + 1.) / (torch.sum(inputs_flat) + torch.sum(one_hots_flat) + 1.))
+    return 1 - (
+        (2 * intersection + 1.0)
+        / (torch.sum(inputs_flat) + torch.sum(one_hots_flat) + 1.0)
+    )

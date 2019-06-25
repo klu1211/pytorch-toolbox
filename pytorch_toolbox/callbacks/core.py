@@ -8,7 +8,14 @@ from torch import Tensor
 import numpy as np
 
 from pytorch_toolbox.defaults import PBar, MetricFuncList, StartOptEnd, AnnealFunc
-from pytorch_toolbox.utils import if_none, camel2snake, is_listy, is_tuple, Phase, listify
+from pytorch_toolbox.utils import (
+    if_none,
+    camel2snake,
+    is_listy,
+    is_tuple,
+    Phase,
+    listify,
+)
 
 
 class Callback:
@@ -71,93 +78,113 @@ class CallbackHandler:
         "Initialize smoother and learning stats."
         self.callbacks = if_none(self.callbacks, [])
         self.metrics = if_none(self.metrics, [])
-        self.metrics = [(met if isinstance(met, Callback) else AverageMetric(met)) for met in self.metrics]
-        self.callbacks = sorted(self.callbacks, key=lambda o: getattr(o, '_order', 0))
+        self.metrics = [
+            (met if isinstance(met, Callback) else AverageMetric(met))
+            for met in self.metrics
+        ]
+        self.callbacks = sorted(self.callbacks, key=lambda o: getattr(o, "_order", 0))
         self.smoothener = SmoothenValue(self.beta)
         self.state_dict: Dict[str, Union[int, float, Tensor]] = self._get_init_state()
 
     def __call__(self, cb_name, call_mets=True, **kwargs) -> None:
         "Call through to all of the `CallbackHandler` functions."
         if call_mets:
-            [getattr(met, f'on_{cb_name}')(**self.state_dict, **kwargs) for met in self.metrics]
-        return [getattr(cb, f'on_{cb_name}')(**self.state_dict, **kwargs) for cb in self.callbacks]
+            [
+                getattr(met, f"on_{cb_name}")(**self.state_dict, **kwargs)
+                for met in self.metrics
+            ]
+        return [
+            getattr(cb, f"on_{cb_name}")(**self.state_dict, **kwargs)
+            for cb in self.callbacks
+        ]
 
     @staticmethod
     def _get_init_state():
-        return {'epoch': 1, 'iteration': 0, 'num_batch': 0}
+        return {"epoch": 1, "iteration": 0, "num_batch": 0}
 
     def on_train_begin(self, epochs: int, pbar: PBar, metrics: MetricFuncList) -> None:
         "About to start learning."
         self.state_dict = self._get_init_state()
-        self.state_dict['n_epochs'], self.state_dict['pbar'], self.state_dict['metrics'] = epochs, pbar, metrics
-        names = [(met.name if hasattr(met, 'name') else camel2snake(met.__class__.__name__)) for met in self.metrics]
-        self('train_begin', metrics_names=names)
+        self.state_dict["n_epochs"], self.state_dict["pbar"], self.state_dict[
+            "metrics"
+        ] = (epochs, pbar, metrics)
+        names = [
+            (met.name if hasattr(met, "name") else camel2snake(met.__class__.__name__))
+            for met in self.metrics
+        ]
+        self("train_begin", metrics_names=names)
 
     def on_epoch_begin(self) -> None:
         "Handle new epoch."
-        self.state_dict['num_batch'] = 0
-        self('epoch_begin')
+        self.state_dict["num_batch"] = 0
+        self("epoch_begin")
 
-    def on_batch_begin(self, xb: Tensor, yb: Tensor, train: bool = True, phase: Phase = Phase.TRAIN) -> None:
+    def on_batch_begin(
+        self, xb: Tensor, yb: Tensor, train: bool = True, phase: Phase = Phase.TRAIN
+    ) -> None:
         "Handle new batch `xb`,`yb`."
-        self.state_dict['last_input'], self.state_dict['last_target'] = xb, yb
-        self.state_dict['train'] = train
-        self.state_dict['phase'] = phase
+        self.state_dict["last_input"], self.state_dict["last_target"] = xb, yb
+        self.state_dict["train"] = train
+        self.state_dict["phase"] = phase
         for cb in self.callbacks:
             a = cb.on_batch_begin(**self.state_dict)
-            if a is not None: self.state_dict['last_input'], self.state_dict['last_target'] = a
-        return self.state_dict['last_input'], self.state_dict['last_target']
+            if a is not None:
+                self.state_dict["last_input"], self.state_dict["last_target"] = a
+        return self.state_dict["last_input"], self.state_dict["last_target"]
 
     def on_loss_begin(self, out: Tensor) -> None:
         "Handle start of loss calculation with model output `out`."
-        self.state_dict['last_output'] = out
+        self.state_dict["last_output"] = out
         for cb in self.callbacks:
             a = cb.on_loss_begin(**self.state_dict)
             if a is not None:
-                self.state_dict['last_output'] = a
-        return self.state_dict['last_output']
+                self.state_dict["last_output"] = a
+        return self.state_dict["last_output"]
 
     def on_backward_begin(self, loss: Tensor) -> None:
         "Handle gradient calculation on `loss`."
         self.smoothener.add_value(loss.detach().cpu())
-        self.state_dict['last_loss'], self.state_dict['smooth_loss'] = loss, self.smoothener.smooth
+        self.state_dict["last_loss"], self.state_dict["smooth_loss"] = (
+            loss,
+            self.smoothener.smooth,
+        )
         for cb in self.callbacks:
             a = cb.on_backward_begin(**self.state_dict)
             if a is not None:
-                self.state_dict['last_loss'] = a
-        return self.state_dict['last_loss']
+                self.state_dict["last_loss"] = a
+        return self.state_dict["last_loss"]
 
     def on_backward_end(self) -> None:
         "Handle end of gradient calculation."
-        self('backward_end', False)
+        self("backward_end", False)
 
     def on_step_end(self) -> None:
         "Handle end of optimization step."
-        self('step_end', False)
+        self("step_end", False)
 
     def on_batch_end(self, loss: Tensor) -> None:
         "Handle end of processing one batch with `loss`."
-        self.state_dict['last_loss'] = loss
-        stop = np.any(self('batch_end', not self.state_dict['train']))
-        if self.state_dict['train']:
-            self.state_dict['iteration'] += 1
-            self.state_dict['num_batch'] += 1
+        self.state_dict["last_loss"] = loss
+        stop = np.any(self("batch_end", not self.state_dict["train"]))
+        if self.state_dict["train"]:
+            self.state_dict["iteration"] += 1
+            self.state_dict["num_batch"] += 1
         return stop
 
     def on_epoch_end(self, val_loss: Tensor) -> bool:
         "Epoch is done, process `val_metrics`."
-        self.state_dict['last_metrics'] = [val_loss] if val_loss is not None else None
-        if not self.state_dict['train']:
+        self.state_dict["last_metrics"] = [val_loss] if val_loss is not None else None
+        if not self.state_dict["train"]:
             for met in self.metrics:
                 met.on_epoch_end(**self.state_dict)
-                self.state_dict['last_metrics'].append(met.metric)
-        should_end = np.any(self('epoch_end', False))
-        self.state_dict['epoch'] += 1
+                self.state_dict["last_metrics"].append(met.metric)
+        should_end = np.any(self("epoch_end", False))
+        self.state_dict["epoch"] += 1
         return should_end
 
     def on_train_end(self, exception: Union[bool, Exception]) -> None:
         "Handle end of training, `exception` is an `Exception` or False if no exceptions during training."
-        self('train_end', exception=exception)
+        self("train_end", exception=exception)
 
 
 class LearnerCallback(Callback):
@@ -169,7 +196,8 @@ class LearnerCallback(Callback):
             setattr(self.learn, self.cb_name, self)
 
     @property
-    def cb_name(self): return camel2snake(self.__class__.__name__)
+    def cb_name(self):
+        return camel2snake(self.__class__.__name__)
 
 
 class TrackerCallback(LearnerCallback):
@@ -179,16 +207,22 @@ class TrackerCallback(LearnerCallback):
         super().__init__(learn)
         self.monitor = monitor
         self.mode = mode
-        assert self.mode in ['auto', 'min', 'max'], "Please select a valid model to monitor"
+        assert self.mode in [
+            "auto",
+            "min",
+            "max",
+        ], "Please select a valid model to monitor"
         mode_dict = dict(min=np.less, max=np.greater)
-        mode_dict['auto'] = np.less if 'loss' in self.monitor else np.greater
+        mode_dict["auto"] = np.less if "loss" in self.monitor else np.greater
         self.operator = mode_dict[self.mode]
 
     def on_train_begin(self, **kwargs) -> None:
-        self.best = float('inf') if self.operator == np.less else -float('inf')
+        self.best = float("inf") if self.operator == np.less else -float("inf")
 
     def get_monitor_value(self, epoch):
-        return self.learn.recorder.get_losses_and_metrics_for_epoch(epoch).get(self.monitor)
+        return self.learn.recorder.get_losses_and_metrics_for_epoch(epoch).get(
+            self.monitor
+        )
 
 
 class SmoothenValue:
@@ -210,21 +244,29 @@ class AverageMetric(Callback):
 
     def __init__(self, func):
         # If it's a partial, use func.func
-        name = getattr(func, 'func', func).__name__
+        name = getattr(func, "func", func).__name__
         self.func, self.name = func, name
 
     def on_epoch_begin(self, **kwargs):
-        self.val, self.count = 0., 0
+        self.val, self.count = 0.0, 0
 
     def on_batch_end(self, last_output, last_target, train, **kwargs):
         if not is_listy(last_target):
             last_target = [last_target]
         self.count += last_target[0].size(0)
         try:
-            self.val += last_target[0].size(0) * self.func(last_output, *last_target).detach().cpu()
-        except TypeError: # catch for multiple arguments
-            logging.warning("There are multiple arguments for the target, so we are assuming the first target is the ground truth of the model")
-            self.val += last_target[0].size(0) * self.func(last_output, last_target[0]).detach().cpu()
+            self.val += (
+                last_target[0].size(0)
+                * self.func(last_output, *last_target).detach().cpu()
+            )
+        except TypeError:  # catch for multiple arguments
+            logging.warning(
+                "There are multiple arguments for the target, so we are assuming the first target is the ground truth of the model"
+            )
+            self.val += (
+                last_target[0].size(0)
+                * self.func(last_output, last_target[0]).detach().cpu()
+            )
 
     def on_epoch_end(self, **kwargs):
         self.metric = self.val / self.count
@@ -262,9 +304,11 @@ def annealing_poly(degree: Number) -> Number:
 
 
 class Scheduler:
-    "Used to \"step\" from start,end (`vals`) over `n_iter` iterations on a schedule defined by `func`"
+    'Used to "step" from start,end (`vals`) over `n_iter` iterations on a schedule defined by `func`'
 
-    def __init__(self, vals: StartOptEnd, n_iter: int, func: Optional[AnnealFunc] = None):
+    def __init__(
+        self, vals: StartOptEnd, n_iter: int, func: Optional[AnnealFunc] = None
+    ):
         if is_tuple(vals):
             self.start, self.end = (vals[0], vals[1])
         elif is_listy(vals):

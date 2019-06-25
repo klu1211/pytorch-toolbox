@@ -11,7 +11,7 @@ def sigmoid_np(x):
 
 def soft_f_score_metric(preds, targs, beta, th=0.5, d=50.0):
     if isinstance(preds, torch.Tensor) and isinstance(targs, torch.Tensor):
-        return (-1. * soft_f_score_loss(preds, targs, beta=beta).mean()) + 1
+        return (-1.0 * soft_f_score_loss(preds, targs, beta=beta).mean()) + 1
     else:
         preds = to_numpy(preds)
         targs = to_numpy(targs)

@@ -18,10 +18,12 @@ def create_u_net_weight_map(mask, w_c=0.5, w_0=10, sigma=5):
     mask_contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     bbox = find_bounding_box_for_mask(mask, mask_contours)
     background_points = find_background_points_in_bbox(mask, *bbox)
-    weights_for_background_points = calculate_weights_for_background_points(background_points,
-                                                                            mask_contours, w_c, w_0,
-                                                                            sigma)
-    weight_map = create_weight_map(background_points, weights_for_background_points, mask, w_c)
+    weights_for_background_points = calculate_weights_for_background_points(
+        background_points, mask_contours, w_c, w_0, sigma
+    )
+    weight_map = create_weight_map(
+        background_points, weights_for_background_points, mask, w_c
+    )
     return weight_map
 
 
@@ -53,11 +55,15 @@ def find_background_points_in_bbox(mask, min_x, max_x, min_y, max_y):
     return points
 
 
-def calculate_weights_for_background_points(background_points, mask_contours, w_c, w_0, sigma):
+def calculate_weights_for_background_points(
+    background_points, mask_contours, w_c, w_0, sigma
+):
     weights = []
     for point in background_points:
-        distances_to_contours = sorted(calculate_distances_to_contour_from_point(point, mask_contours),
-                                       reverse=True)
+        distances_to_contours = sorted(
+            calculate_distances_to_contour_from_point(point, mask_contours),
+            reverse=True,
+        )
         weight = calculate_weight_from_distances(distances_to_contours, w_c, w_0, sigma)
         weights.append(weight)
     return weights
@@ -67,7 +73,9 @@ def calculate_distances_to_contour_from_point(point, contours):
     distances_to_contours = []
     for contour in contours:
         open_cv_point = (point[1], point[0])
-        distance_from_point_to_contour = cv2.pointPolygonTest(contour, open_cv_point, measureDist=True)
+        distance_from_point_to_contour = cv2.pointPolygonTest(
+            contour, open_cv_point, measureDist=True
+        )
         distances_to_contours.append(distance_from_point_to_contour)
     return distances_to_contours
 
@@ -153,25 +161,25 @@ def tensor2img(image_tensor, imtype=np.uint8, denormalize_fn=None, scale_factor=
 
 # ref.: https://www.kaggle.com/stainsby/fast-tested-rle
 def rle_encode(img):
-    '''
+    """
     img: numpy array, 1 - mask, 0 - background
     Returns run length as string formated
-    '''
+    """
     pixels = img.transpose().flatten()
     pixels = np.concatenate([[0], pixels, [0]])
     runs = np.where(pixels[1:] != pixels[:-1])[0] + 1
     runs[1::2] -= runs[::2]
-    return ' '.join(str(x) for x in runs)
+    return " ".join(str(x) for x in runs)
 
 
 # ref: https://www.kaggle.com/paulorzp/run-length-encode-and-decode
 def rle_decode(mask_rle, shape=(768, 768)):
-    '''
+    """
     mask_rle: run-length as string formated (start length)
     shape: (height,width) of array to return
     Returns numpy array, 1 - mask, 0 - background
 
-    '''
+    """
     s = mask_rle.split()
     starts, lengths = [np.asarray(x, dtype=int) for x in (s[0:][::2], s[1:][::2])]
     starts -= 1
@@ -183,13 +191,17 @@ def rle_decode(mask_rle, shape=(768, 768)):
 
 
 def rle_decode_with_nans(rle, shape):
-    return rle_decode(str(rle[0])) if str(rle[0]) != 'nan' else np.zeros(shape).astype(np.uint8)
+    return (
+        rle_decode(str(rle[0]))
+        if str(rle[0]) != "nan"
+        else np.zeros(shape).astype(np.uint8)
+    )
 
 
 def normalize(tensor, *, mean, std):
     mean = torch.Tensor(mean)
     std = torch.Tensor(std)
-    tensor = ((tensor - mean[..., None, None]) / std[..., None, None])
+    tensor = (tensor - mean[..., None, None]) / std[..., None, None]
     return tensor
 
 
@@ -200,33 +212,38 @@ def denormalize(tensor, *, mean, std):
     return tensor
 
 
-IMAGE_NET_STATS = {'mean': [0.485, 0.456, 0.406],
-                   'std': [0.229, 0.224, 0.225]}
+IMAGE_NET_STATS = {"mean": [0.485, 0.456, 0.406], "std": [0.229, 0.224, 0.225]}
 
 FOUR_CHANNEL_PNASNET5LARGE_STATS = {
-    'mean': [0.5, 0.5, 0.5, 0.5],
-    'std': [0.5, 0.5, 0.5, 0.5]
+    "mean": [0.5, 0.5, 0.5, 0.5],
+    "std": [0.5, 0.5, 0.5, 0.5],
 }
 
 FOUR_CHANNEL_IMAGE_NET_STATS = {
-    'mean': [0.485, 0.456, 0.406, 0.485],
-    'std': [0.229, 0.224, 0.224, 0.229]
+    "mean": [0.485, 0.456, 0.406, 0.485],
+    "std": [0.229, 0.224, 0.224, 0.229],
 }
 image_net_normalize = partial(normalize, **IMAGE_NET_STATS)
 image_net_denormalize = partial(denormalize, **IMAGE_NET_STATS)
 
 four_channel_image_net_normalize = partial(normalize, **FOUR_CHANNEL_IMAGE_NET_STATS)
-four_channel_image_net_denormalize = partial(denormalize, **FOUR_CHANNEL_IMAGE_NET_STATS)
+four_channel_image_net_denormalize = partial(
+    denormalize, **FOUR_CHANNEL_IMAGE_NET_STATS
+)
 
-four_channel_pnasnet5large_normalize = partial(normalize, **FOUR_CHANNEL_PNASNET5LARGE_STATS)
-four_channel_pnasnet5large_denormalize = partial(denormalize, **FOUR_CHANNEL_PNASNET5LARGE_STATS)
+four_channel_pnasnet5large_normalize = partial(
+    normalize, **FOUR_CHANNEL_PNASNET5LARGE_STATS
+)
+four_channel_pnasnet5large_denormalize = partial(
+    denormalize, **FOUR_CHANNEL_PNASNET5LARGE_STATS
+)
 
 normalize_fn_lookup = {
     "image_net_normalize": image_net_normalize,
     "four_channel_image_net_normalize": four_channel_image_net_normalize,
     "four_channel_pnasnet5large_normalize": four_channel_image_net_normalize,
     "normalize": normalize,
-    "identity": lambda x: x
+    "identity": lambda x: x,
 }
 
 denormalize_fn_lookup = {
@@ -234,5 +251,5 @@ denormalize_fn_lookup = {
     "four_channel_image_net_denormalize": four_channel_image_net_denormalize,
     "four_channel_pnasnet5large_denormalize": four_channel_image_net_denormalize,
     "denormalize": denormalize,
-    "identity": lambda x: x
+    "identity": lambda x: x,
 }

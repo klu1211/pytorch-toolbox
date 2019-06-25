@@ -9,7 +9,9 @@ from pytorch_toolbox.utils import timeit, to_numpy
 
 
 class FocalLoss(BaseLoss):
-    def __init__(self, gamma=2, one_hot_encoding=False, per_sample_loss_aggregate_method="SUM"):
+    def __init__(
+        self, gamma=2, one_hot_encoding=False, per_sample_loss_aggregate_method="SUM"
+    ):
         self.gamma = gamma
         self.one_hot_encoding = one_hot_encoding
         self.per_sample_loss_aggregate_method = per_sample_loss_aggregate_method
@@ -39,9 +41,12 @@ class FocalLoss(BaseLoss):
         prediction = out
         target = yb[0]
         # This returns B x ... (same shape as input)
-        self._unreduced_loss = focal_loss(prediction, target, self.gamma, one_hot_encoding=self.one_hot_encoding)
+        self._unreduced_loss = focal_loss(
+            prediction, target, self.gamma, one_hot_encoding=self.one_hot_encoding
+        )
         self._per_sample_loss = self.reshape_to_batch_size_x_minus_one_aggregate_over_last_dimension(
-            self._unreduced_loss, aggregate_method=self.per_sample_loss_aggregate_method)
+            self._unreduced_loss, aggregate_method=self.per_sample_loss_aggregate_method
+        )
         self._reduced_loss = self._per_sample_loss.mean()
         return self._reduced_loss
 
@@ -58,12 +63,18 @@ def focal_loss(input, target, gamma=2, one_hot_encoding=False):
         target = _make_one_hot(input, target)
 
     if not (target.size() == input.size()):
-        raise ValueError(f"Target size ({target.size()}) must be the same as input size ({input.size()})")
+        raise ValueError(
+            f"Target size ({target.size()}) must be the same as input size ({input.size()})"
+        )
 
     target = target.float()
     max_val = (-input).clamp(min=0)
-    loss = input - input * target + max_val + \
-           ((-max_val).exp() + (-input - max_val).exp()).log()
+    loss = (
+        input
+        - input * target
+        + max_val
+        + ((-max_val).exp() + (-input - max_val).exp()).log()
+    )
 
     inv_probs = F.logsigmoid(-input * (target * 2.0 - 1.0))
     loss = (inv_probs * gamma).exp() * loss
@@ -74,4 +85,3 @@ def _make_one_hot(input, target):
     one_hot = torch.FloatTensor(*input.shape).zero_().to(default_hardware.device)
     target = one_hot.scatter_(1, target.long(), 1)
     return target
-

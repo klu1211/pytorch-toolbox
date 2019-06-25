@@ -41,7 +41,7 @@ def var_representer(dumper, data):
         value = f"{data.variable_group}.{data.variable_name}"
     else:
         value = f"{data.variable_name}"
-    return dumper.represent_scalar('!Var', f"{value}")
+    return dumper.represent_scalar("!Var", f"{value}")
 
 
 @dataclass
@@ -59,18 +59,20 @@ def ref_constructor(loader, node):
 
 def ref_representer(dumper, data):
     value = f"{data.ref_node_name}.{data.output_name}"
-    return dumper.represent_scalar('!Ref', f"{value}")
+    return dumper.represent_scalar("!Ref", f"{value}")
 
 
-PyTorchToolboxLoader.add_constructor('!Var', var_constructor)
+PyTorchToolboxLoader.add_constructor("!Var", var_constructor)
 PyTorchToolboxDumper.add_representer(Variable, var_representer)
 
-PyTorchToolboxLoader.add_constructor('!Ref', ref_constructor)
+PyTorchToolboxLoader.add_constructor("!Ref", ref_constructor)
 PyTorchToolboxDumper.add_representer(Reference, ref_representer)
 
 
 def replace_config_variables(config, resource_key, variable_key):
-    assert variable_key in config, f"There is no key: {variable_key} in the first level of the configuration file"
+    assert (
+        variable_key in config
+    ), f"There is no key: {variable_key} in the first level of the configuration file"
     config = deepcopy(config)
     replaced_resources = replace_variables(config[resource_key], config[variable_key])
     config[resource_key] = replaced_resources
@@ -99,7 +101,8 @@ def replace_variable_with_group(resource, variables):
         return variables[resource.variable_group][resource.variable_name]
     except KeyError:
         logging.error(
-            f"Variable in group: {resource.variable_group} with name: {resource.variable_name} does not exist")
+            f"Variable in group: {resource.variable_group} with name: {resource.variable_name} does not exist"
+        )
         exit(1)
 
 
@@ -110,7 +113,9 @@ def replace_variable_without_group(resources, variables):
 def load_config_from_string(config_string, with_variable_replacement=False):
     config = yaml.load(config_string, Loader=PyTorchToolboxLoader)
     if with_variable_replacement:
-        config = replace_config_variables(config, resource_key=RESOURCE_KEY, variable_key=VARIABLE_KEY)
+        config = replace_config_variables(
+            config, resource_key=RESOURCE_KEY, variable_key=VARIABLE_KEY
+        )
     return config
 
 
@@ -125,5 +130,7 @@ def dump_config_to_string(config):
 
 
 def dump_config_to_path(config, save_path):
-    with save_path.open('w') as yaml_file:
-        yaml.dump(config, yaml_file, Dumper=PyTorchToolboxDumper, default_flow_style=False)
+    with save_path.open("w") as yaml_file:
+        yaml.dump(
+            config, yaml_file, Dumper=PyTorchToolboxDumper, default_flow_style=False
+        )

@@ -1,21 +1,45 @@
-from pytorch_toolbox.callbacks import CallbackList, LRFinder, OneCycleScheduler, MixedPrecision, MultiStepScheduler
+from pytorch_toolbox.callbacks import (
+    CallbackList,
+    LRFinder,
+    OneCycleScheduler,
+    MixedPrecision,
+    MultiStepScheduler,
+)
 from pytorch_toolbox.defaults import *
 from pytorch_toolbox.utils import if_none, is_listy
 from pytorch_toolbox.utils.training import model2half
 
 
-def fit_one_cycle(learn, cyc_len: int, max_lr: Union[Floats, slice] = default_lr,
-                  moms: Tuple[float, float] = (0.95, 0.85), div_factor: float = 25., pct_start: float = 0.3,
-                  wd: float = None, callbacks: Optional[CallbackList] = None, **kwargs) -> None:
+def fit_one_cycle(
+    learn,
+    cyc_len: int,
+    max_lr: Union[Floats, slice] = default_lr,
+    moms: Tuple[float, float] = (0.95, 0.85),
+    div_factor: float = 25.0,
+    pct_start: float = 0.3,
+    wd: float = None,
+    callbacks: Optional[CallbackList] = None,
+    **kwargs
+) -> None:
     "Fit a model following the 1cycle policy."
     max_lr = learn.lr_range(max_lr)
     callbacks = if_none(callbacks, [])
-    callbacks.append(OneCycleScheduler(learn, max_lr, moms=moms, div_factor=div_factor,
-                                       pct_start=pct_start, **kwargs))
+    callbacks.append(
+        OneCycleScheduler(
+            learn,
+            max_lr,
+            moms=moms,
+            div_factor=div_factor,
+            pct_start=pct_start,
+            **kwargs
+        )
+    )
     learn.fit(cyc_len, max_lr, wd=wd, callbacks=callbacks)
 
 
-def _hyperparameter_value_is_for_layer_groups(hyperparameter_values: Union[List[List[List[Number]]], List[List[Number]]]):
+def _hyperparameter_value_is_for_layer_groups(
+    hyperparameter_values: Union[List[List[List[Number]]], List[List[Number]]]
+):
     """
     Checks if the hyperparameter values is for layer groups, if it is for layer groups, the hyperparameter values will be
     a nested list.
@@ -45,9 +69,16 @@ def _hyperparameter_value_is_for_layer_groups(hyperparameter_values: Union[List[
         return False
 
 
-def fit_multi_step(learn, epochs_for_step_for_hyperparameters: List[List[Number]], hyperparameter_names: List[str],
-                   hyperparameter_values, start_epoch: Optional[int] = None, end_epoch: Optional[int] = None,
-                   wd: float = None, callbacks: Optional[CallbackList] = None):
+def fit_multi_step(
+    learn,
+    epochs_for_step_for_hyperparameters: List[List[Number]],
+    hyperparameter_names: List[str],
+    hyperparameter_values,
+    start_epoch: Optional[int] = None,
+    end_epoch: Optional[int] = None,
+    wd: float = None,
+    callbacks: Optional[CallbackList] = None,
+):
     """
 
     :param learn: The Learner class
@@ -62,19 +93,30 @@ def fit_multi_step(learn, epochs_for_step_for_hyperparameters: List[List[Number]
     :return:
     """
     multistep_cbs = []
-    for epochs_for_step_for_hp, hp_name, hp_val in zip(epochs_for_step_for_hyperparameters, hyperparameter_names,
-                                                       hyperparameter_values):
+    for epochs_for_step_for_hp, hp_name, hp_val in zip(
+        epochs_for_step_for_hyperparameters, hyperparameter_names, hyperparameter_values
+    ):
         if _hyperparameter_value_is_for_layer_groups(hp_val):
             hp_val = [np.array(v) for v in zip(*hp_val)]
-        multistep_cbs.append(MultiStepScheduler(learn, epochs_for_step_for_hp, hp_name, hp_val, start_epoch, end_epoch))
+        multistep_cbs.append(
+            MultiStepScheduler(
+                learn, epochs_for_step_for_hp, hp_name, hp_val, start_epoch, end_epoch
+            )
+        )
     end_epoch = multistep_cbs[-1].end_epoch
     callbacks = if_none(callbacks, [])
     callbacks.extend(multistep_cbs)
     learn.fit(end_epoch, wd=wd, callbacks=callbacks)
 
 
-def lr_find(learn, start_lr: Floats = 1e-7, end_lr: Floats = 10, num_it: int = 100, stop_div: bool = True,
-            **kwargs: Any):
+def lr_find(
+    learn,
+    start_lr: Floats = 1e-7,
+    end_lr: Floats = 10,
+    num_it: int = 100,
+    stop_div: bool = True,
+    **kwargs: Any
+):
     "Explore lr from `start_lr` to `end_lr` over `num_it` iterations in `learn`. If `stop_div`, stops when loss explodes."
     start_lr = np.array(start_lr) if is_listy(start_lr) else start_lr
     end_lr = np.array(end_lr) if is_listy(end_lr) else end_lr
@@ -83,12 +125,13 @@ def lr_find(learn, start_lr: Floats = 1e-7, end_lr: Floats = 10, num_it: int = 1
     learn.fit(a, start_lr, callbacks=[cb], **kwargs)
 
 
-def to_fp16(learn, loss_scale: float = 512., flat_master: bool = False):
+def to_fp16(learn, loss_scale: float = 512.0, flat_master: bool = False):
     "Transform `learn` in FP16 precision."
     learn.model = model2half(learn.model)
     learn.mp_cb = MixedPrecision(learn, loss_scale=loss_scale, flat_master=flat_master)
     learn.callbacks.append(learn.mp_cb)
     return learn
+
 
 # def mixup(learn, alpha: float = 0.4, stack_x: bool = False, stack_y: bool = True) -> Learner:
 #     "Add mixup https://arxiv.org/abs/1710.09412 to `learn`."

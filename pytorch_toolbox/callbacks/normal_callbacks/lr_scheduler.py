@@ -13,7 +13,8 @@ class TrainingPhase:
     "Schedule hyper-parameters for a phase of `length` iterations."
     length: int
 
-    def __post_init__(self): self.scheduler_lookup = dict()
+    def __post_init__(self):
+        self.scheduler_lookup = dict()
 
     def schedule_hp(self, name, vals, anneal=None):
         "Adds a schedule for `name` between `vals` using `anneal`."
@@ -32,7 +33,9 @@ class TrainingPhase:
 class GeneralScheduler(Callback):
     "Schedule multiple `TrainingPhase` for a `Learner`."
 
-    def __init__(self, learn, phases: Collection[TrainingPhase], start_epoch: int = None):
+    def __init__(
+        self, learn, phases: Collection[TrainingPhase], start_epoch: int = None
+    ):
         super().__init__()
         self.learn = learn
         self.phases, self.start_epoch = phases, start_epoch
@@ -44,10 +47,12 @@ class GeneralScheduler(Callback):
 
     def on_train_begin(self, epoch: int, **kwargs: Any) -> None:
         "Initialize the schedulers for training."
-        res = {'epoch': self.start_epoch} if self.start_epoch is not None else None
+        res = {"epoch": self.start_epoch} if self.start_epoch is not None else None
         self.start_epoch = if_none(self.start_epoch, epoch)
         self.opt = self.learn.opt
-        current_hp_name_and_scheduler_pairs = self.current_phase.hyperparameter_and_scheduler_pairs
+        current_hp_name_and_scheduler_pairs = (
+            self.current_phase.hyperparameter_and_scheduler_pairs
+        )
         for hp_name, scheduler in current_hp_name_and_scheduler_pairs:
             scheduler.restart()
             setattr(self.opt, hp_name, scheduler.start)
@@ -61,9 +66,11 @@ class GeneralScheduler(Callback):
         "Take a step in lr,mom sched, start next stepper when the current one is complete."
         if train:
             if self.current_phase_idx >= len(self.phases):
-                return {'stop_training': True, 'stop_epoch': True}
+                return {"stop_training": True, "stop_epoch": True}
 
-            current_hp_name_and_scheduler_pairs = self.current_phase.hyperparameter_and_scheduler_pairs
+            current_hp_name_and_scheduler_pairs = (
+                self.current_phase.hyperparameter_and_scheduler_pairs
+            )
             for hp_name, scheduler in current_hp_name_and_scheduler_pairs:
                 hp_value = scheduler.step()
                 setattr(self.opt, hp_name, hp_value)
@@ -73,27 +80,37 @@ class GeneralScheduler(Callback):
 
 
 class MultiStepScheduler(GeneralScheduler):
-
-    def __init__(self, learn, epochs_for_step: List[Number], hyperparameter_name: str,
-                 hyperparameter_values_for_step: List[Floats],
-                 start_epoch: Optional[Number] = None,
-                 end_epoch: Optional[Number] = None):
+    def __init__(
+        self,
+        learn,
+        epochs_for_step: List[Number],
+        hyperparameter_name: str,
+        hyperparameter_values_for_step: List[Floats],
+        start_epoch: Optional[Number] = None,
+        end_epoch: Optional[Number] = None,
+    ):
         assert len(epochs_for_step) > 0
         assert epochs_for_step[0] == 0, "Please set the first epoch to 0"
         if len(epochs_for_step) == 1:
-            assert end_epoch is not None, "Please provide an end epoch as it can't be automatically calculated"
+            assert (
+                end_epoch is not None
+            ), "Please provide an end epoch as it can't be automatically calculated"
 
         self.end_epoch = if_none(end_epoch, epochs_for_step[-1] * 2)
         self.epochs_for_step = epochs_for_step
         self.hyperparameter_values_for_step = hyperparameter_values_for_step
         self.hyperparameter_name = hyperparameter_name
-        self.epochs_to_iterations = self._convert_epochs_to_iterations(n_iterations_in_epoch=len(learn.data.train_dl))
+        self.epochs_to_iterations = self._convert_epochs_to_iterations(
+            n_iterations_in_epoch=len(learn.data.train_dl)
+        )
         self.training_phases = self._create_training_phases()
         super().__init__(learn, self.training_phases, start_epoch)
 
     def _convert_epochs_to_iterations(self, n_iterations_in_epoch):
         epochs_between_each_step = self._calculate_epochs_between_each_step()
-        epochs_to_n_iterations = [int(epoch * n_iterations_in_epoch) for epoch in epochs_between_each_step]
+        epochs_to_n_iterations = [
+            int(epoch * n_iterations_in_epoch) for epoch in epochs_between_each_step
+        ]
         return epochs_to_n_iterations
 
     def _calculate_epochs_between_each_step(self):
@@ -113,16 +130,24 @@ class MultiStepScheduler(GeneralScheduler):
         epochs_between_each_step = [10, 30, 50, 80] - [0, 10, 30, 50] = [10, 20, 20, 30]
         :return:
         """
-        epochs_for_step_with_end_epoch = np.array(self.epochs_for_step + [self.end_epoch])
-        epochs_between_each_step = epochs_for_step_with_end_epoch[1:] - np.array(self.epochs_for_step)
+        epochs_for_step_with_end_epoch = np.array(
+            self.epochs_for_step + [self.end_epoch]
+        )
+        epochs_between_each_step = epochs_for_step_with_end_epoch[1:] - np.array(
+            self.epochs_for_step
+        )
         return epochs_between_each_step
 
     def _create_training_phases(self):
         training_phases = []
-        for hp_name, hp_val, n_iterations in zip(cycle([self.hyperparameter_name]),
-                                                 self.hyperparameter_values_for_step,
-                                                 self.epochs_to_iterations):
+        for hp_name, hp_val, n_iterations in zip(
+            cycle([self.hyperparameter_name]),
+            self.hyperparameter_values_for_step,
+            self.epochs_to_iterations,
+        ):
             training_phase = TrainingPhase(length=n_iterations)
-            training_phase = training_phase.schedule_hp(hp_name, hp_val, anneal=annealing_no)
+            training_phase = training_phase.schedule_hp(
+                hp_name, hp_val, anneal=annealing_no
+            )
             training_phases.append(training_phase)
         return training_phases

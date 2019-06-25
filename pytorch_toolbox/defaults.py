@@ -1,7 +1,20 @@
 import os
 from numbers import Number
 from types import SimpleNamespace
-from typing import Optional, Dict, Any, Iterator, Iterable, Sequence, Union, Callable, Tuple, List, Any, Collection
+from typing import (
+    Optional,
+    Dict,
+    Any,
+    Iterator,
+    Iterable,
+    Sequence,
+    Union,
+    Callable,
+    Tuple,
+    List,
+    Any,
+    Collection,
+)
 
 import numpy as np
 import torch
@@ -18,7 +31,9 @@ def num_cpus() -> int:
 
 
 _default_cpus = min(1, num_cpus())
-_default_device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+_default_device = (
+    torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+)
 default_hardware = SimpleNamespace(device=_default_device, cpus=_default_cpus)
 default_collate = torch.utils.data.dataloader.default_collate
 default_lr = 3e-3
@@ -34,7 +49,7 @@ TensorOrNumber = Union[Tensor, Number]
 TensorOrNumberList = Collection[TensorOrNumber]
 TensorImage = Tensor
 TensorImageSize = Tuple[int, int, int]
-Tensors = Union[Tensor, Collection['Tensors']]
+Tensors = Union[Tensor, Collection["Tensors"]]
 Weights = Dict[str, Tensor]
 HookFunc = Callable[[nn.Module, Tensors, Tensors], Any]
 LogitTensorImage = TensorImage

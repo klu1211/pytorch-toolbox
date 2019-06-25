@@ -30,7 +30,8 @@ class SoftFScoreLoss(BaseLoss):
         loss = soft_f_score_loss(prediction, target, beta=self.beta)
         self._unreduced_loss = loss
         self._per_sample_loss = self.reshape_to_batch_size_x_minus_one_aggregate_over_last_dimension(
-            self._unreduced_loss, aggregate_method=self.per_sample_loss_aggregate_method)
+            self._unreduced_loss, aggregate_method=self.per_sample_loss_aggregate_method
+        )
         self._reduced_loss = self._per_sample_loss.mean()
         return self._reduced_loss
 
@@ -58,5 +59,10 @@ def soft_f_score_loss(logits, labels, beta=1):
 
     soft_tp_plus_fn = torch.sum(labels, 1) + __small_value
     recall = true_positive / soft_tp_plus_fn
-    f1_soft = (1 + beta ** 2) * precision * recall / (beta ** 2 * precision + recall + __small_value)
+    f1_soft = (
+        (1 + beta ** 2)
+        * precision
+        * recall
+        / (beta ** 2 * precision + recall + __small_value)
+    )
     return 1 - f1_soft

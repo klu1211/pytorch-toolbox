@@ -22,8 +22,9 @@ def listify(p: OptionalListOrItem = None, q: OptionalListOrItem = None):
     elif not isinstance(p, Iterable):
         p = [p]
     n = q if type(q) == int else len(p) if q is None else len(q)
-    if len(p) == 1: p = p * n
-    assert len(p) == n, f'List len mismatch ({len(p)} vs {n})'
+    if len(p) == 1:
+        p = p * n
+    assert len(p) == n, f"List len mismatch ({len(p)} vs {n})"
     return list(p)
 
 
@@ -53,10 +54,10 @@ def range_of(x):
 
 
 def camel2snake(name: str) -> str:
-    _camel_re1 = re.compile('(.)([A-Z][a-z]+)')
-    _camel_re2 = re.compile('([a-z0-9])([A-Z])')
-    s1 = re.sub(_camel_re1, r'\1_\2', name)
-    return re.sub(_camel_re2, r'\1_\2', s1).lower()
+    _camel_re1 = re.compile("(.)([A-Z][a-z]+)")
+    _camel_re2 = re.compile("([a-z0-9])([A-Z])")
+    s1 = re.sub(_camel_re1, r"\1_\2", name)
+    return re.sub(_camel_re2, r"\1_\2", s1).lower()
 
 
 def even_mults(start: float, stop: float, n: int) -> np.ndarray:
@@ -82,7 +83,6 @@ class Phase(Enum):
     TEST = 3
 
 
-
 def timeit(name):
     def wrapper(f):
         def wrapped_f(*args, **kwargs):
@@ -91,12 +91,15 @@ def timeit(name):
             time_end = time.time()
             logging.info(f"{name} took {round((time_end - time_start), 2)} seconds")
             return ret
+
         return wrapped_f
+
     return wrapper
 
 
 import time
 from pathlib import Path
+
 
 def create_time_stamped_save_path(save_path, state_dict):
     try:
@@ -115,6 +118,5 @@ def create_time_stamped_save_path(save_path, state_dict):
         path = path / f"Fold_{current_fold}"
     return path
 
-lookup = {
-    "create_time_stamped_save_path": create_time_stamped_save_path
-}
+
+lookup = {"create_time_stamped_save_path": create_time_stamped_save_path}

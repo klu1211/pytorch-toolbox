@@ -10,13 +10,33 @@ import numpy as np
 from fastprogress import progress_bar, master_bar
 from miniutils import progbar
 
-from pytorch_toolbox.training.learner.train import fit_one_cycle, fit_multi_step, lr_find, to_fp16
+from pytorch_toolbox.training.learner.train import (
+    fit_one_cycle,
+    fit_multi_step,
+    lr_find,
+    to_fp16,
+)
 from pytorch_toolbox.callbacks import Callback, CallbackList, CallbackHandler, Recorder
 from pytorch_toolbox.data import DataBunch
-from pytorch_toolbox.defaults import Floats, default_lr, bn_types, LossFunction, OptionalMetrics, \
-    OptionalLossFunction, PBar, OptionalOptimizer
+from pytorch_toolbox.defaults import (
+    Floats,
+    default_lr,
+    bn_types,
+    LossFunction,
+    OptionalMetrics,
+    OptionalLossFunction,
+    PBar,
+    OptionalOptimizer,
+)
 from pytorch_toolbox.training import OptimizerWrapper
-from pytorch_toolbox.utils import listify, if_none, is_listy, to_numpy, even_mults, Phase
+from pytorch_toolbox.utils import (
+    listify,
+    if_none,
+    is_listy,
+    to_numpy,
+    even_mults,
+    Phase,
+)
 from pytorch_toolbox.utils.training import flatten_model, to_detach, requires_grad
 
 AdamW = partial(Adam, betas=(0.9, 0.99))
@@ -24,12 +44,25 @@ AdamW = partial(Adam, betas=(0.9, 0.99))
 
 ## TODO: refactor fit, validate, and predict_on_dl as they share a lot of common functionality
 
+
 class Learner:
-    def __init__(self, data: DataBunch, model: nn.Module, loss_func: Callable, opt_func: Callable = AdamW,
-                 metrics: Collection[Callable] = None, true_weight_decay: bool = True,
-                 batch_norm_weight_decay: bool = True, weight_decay: Floats = 1e-2, train_bn: bool = True,
-                 path: str = ".", model_dir: str = "model", callback_fns: Collection[Callable] = None,
-                 callbacks: Collection[Callable] = [], layer_groups: Collection[nn.Module] = None):
+    def __init__(
+        self,
+        data: DataBunch,
+        model: nn.Module,
+        loss_func: Callable,
+        opt_func: Callable = AdamW,
+        metrics: Collection[Callable] = None,
+        true_weight_decay: bool = True,
+        batch_norm_weight_decay: bool = True,
+        weight_decay: Floats = 1e-2,
+        train_bn: bool = True,
+        path: str = ".",
+        model_dir: str = "model",
+        callback_fns: Collection[Callable] = None,
+        callbacks: Collection[Callable] = [],
+        layer_groups: Collection[nn.Module] = None,
+    ):
         """
 
         :param data: object that wraps the data loaders
@@ -66,21 +99,39 @@ class Learner:
         else:
             self.layer_groups = layer_groups
 
-    def fit(self, epochs: int, lr: Union[Floats, slice] = default_lr,
-            wd: Floats = None, callbacks: Collection[Callback] = None) -> None:
+    def fit(
+        self,
+        epochs: int,
+        lr: Union[Floats, slice] = default_lr,
+        wd: Floats = None,
+        callbacks: Collection[Callback] = None,
+    ) -> None:
         "Fit the model on this learner with `lr` learning rate, `wd` weight decay for `epochs` with `callbacks`."
         lr = self.lr_range(lr)
         if wd is None:
             wd = self.weight_decay
         self.create_opt(lr, wd)
         callbacks = [cb(self) for cb in self.callback_fns] + listify(callbacks)
-        fit(epochs, self.model, self.loss_func, opt=self.opt, data=self.data, metrics=self.metrics,
-            callbacks=self.callbacks + callbacks)
+        fit(
+            epochs,
+            self.model,
+            self.loss_func,
+            opt=self.opt,
+            data=self.data,
+            metrics=self.metrics,
+            callbacks=self.callbacks + callbacks,
+        )
 
-    def create_opt(self, lr: Floats, wd: Floats = 0.) -> None:
+    def create_opt(self, lr: Floats, wd: Floats = 0.0) -> None:
         "Create optimizer with `lr` learning rate and `wd` weight decay."
-        self.opt = OptimizerWrapper.create(opt_func=self.opt_func, lr=lr, layer_groups=self.layer_groups,
-                                           wd=wd, true_wd=self.true_weight_decay, bn_wd=self.batch_norm_weight_decay)
+        self.opt = OptimizerWrapper.create(
+            opt_func=self.opt_func,
+            lr=lr,
+            layer_groups=self.layer_groups,
+            wd=wd,
+            true_wd=self.true_weight_decay,
+            bn_wd=self.batch_norm_weight_decay,
+        )
 
     def lr_range(self, lr: Union[float, slice]) -> np.ndarray:
         "Build differential learning rates."
@@ -100,9 +151,13 @@ class Learner:
                     print(p.shape)
                     print(p.requires_grad)
 
-    def _predict_on_dl(self, dl, phase, callbacks=None, callback_fns=None, metrics=None):
+    def _predict_on_dl(
+        self, dl, phase, callbacks=None, callback_fns=None, metrics=None
+    ):
         assert dl is not None, "A dataloader must be provided"
-        assert phase is not None, "A phase must be provided: {Phase.TRAIN, Phase.VAL, Phase.TEST}"
+        assert (
+            phase is not None
+        ), "A phase must be provided: {Phase.TRAIN, Phase.VAL, Phase.TEST}"
         callbacks_fns = [cb(self) for cb in if_none(callback_fns, [])]
         callbacks = self.callbacks + if_none(callbacks, []) + if_none(callbacks_fns, [])
 
@@ -110,8 +165,7 @@ class Learner:
             metrics = if_none(metrics, self.metrics)
         else:
             metrics = []
-        cb_handler = CallbackHandler(callbacks=callbacks,
-                                     metrics=metrics)
+        cb_handler = CallbackHandler(callbacks=callbacks, metrics=metrics)
         with torch.no_grad():
             self.model.eval()
             cb_handler.on_epoch_begin()
@@ -141,12 +195,14 @@ class Learner:
         "Freeze layers up to layer `n`."
         for g in self.layer_groups[:n]:
             for l in g:
-                if not self.train_bn or not isinstance(l, bn_types): requires_grad(l, False)
-        for g in self.layer_groups[n:]: requires_grad(g, True)
+                if not self.train_bn or not isinstance(l, bn_types):
+                    requires_grad(l, False)
+        for g in self.layer_groups[n:]:
+            requires_grad(g, True)
 
     def freeze(self) -> None:
         "Freeze up to last layer."
-        assert (len(self.layer_groups) > 1)
+        assert len(self.layer_groups) > 1
         self.freeze_to(-1)
 
     def unfreeze(self):
@@ -154,7 +210,8 @@ class Learner:
         self.freeze_to(0)
 
     def freeze_layer_groups(self, layer_group_idxs):
-        if not is_listy(layer_group_idxs): layer_group_idxs = [layer_group_idxs]
+        if not is_listy(layer_group_idxs):
+            layer_group_idxs = [layer_group_idxs]
         super().unfreeze()
         for i in layer_group_idxs:
             for l in self.layer_groups[i]:
@@ -162,14 +219,19 @@ class Learner:
                     requires_grad(l, False)
 
     def unfreeze_layer_groups(self, layer_group_idxs):
-        if not is_listy(layer_group_idxs): layer_group_idxs = [layer_group_idxs]
-        layer_group_idxs_to_freeze = list(set(list(range(len(self.layer_groups)))) - set(layer_group_idxs))
+        if not is_listy(layer_group_idxs):
+            layer_group_idxs = [layer_group_idxs]
+        layer_group_idxs_to_freeze = list(
+            set(list(range(len(self.layer_groups)))) - set(layer_group_idxs)
+        )
         self.freeze_layer_groups(layer_group_idxs_to_freeze)
 
     def load_model_with_name(self, name, device=None):
         if device is None:
             device = self.data.device
-        self.model.load_state_dict(torch.load(self.path / self.model_dir / f"{name}.pth", map_location=device))
+        self.model.load_state_dict(
+            torch.load(self.path / self.model_dir / f"{name}.pth", map_location=device)
+        )
         return self
 
     def load_model_with_path(self, path, device=None):
@@ -201,8 +263,15 @@ Learner.lr_find = lr_find
 Learner.to_fp16 = to_fp16
 
 
-def fit(epochs: int, model: nn.Module, loss_func: LossFunction, opt: optim.Optimizer,
-        data: DataBunch, callbacks: Optional[CallbackList] = None, metrics: OptionalMetrics = None) -> None:
+def fit(
+    epochs: int,
+    model: nn.Module,
+    loss_func: LossFunction,
+    opt: optim.Optimizer,
+    data: DataBunch,
+    callbacks: Optional[CallbackList] = None,
+    metrics: OptionalMetrics = None,
+) -> None:
     "Fit the `model` on `data` and learn using `loss` and `opt`."
     cb_handler = CallbackHandler(callbacks, metrics)
     pbar = master_bar(range(epochs))
@@ -220,12 +289,18 @@ def fit(epochs: int, model: nn.Module, loss_func: LossFunction, opt: optim.Optim
                 if cb_handler.on_batch_end(loss):
                     break
 
-            if hasattr(data, 'valid_dl') and data.valid_dl is not None:
-                val_loss = validate(model, data.valid_dl, loss_func=loss_func,
-                                    cb_handler=cb_handler, pbar=pbar)
+            if hasattr(data, "valid_dl") and data.valid_dl is not None:
+                val_loss = validate(
+                    model,
+                    data.valid_dl,
+                    loss_func=loss_func,
+                    cb_handler=cb_handler,
+                    pbar=pbar,
+                )
             else:
                 val_loss = None
-            if cb_handler.on_epoch_end(val_loss): break
+            if cb_handler.on_epoch_end(val_loss):
+                break
     except Exception as e:
         raise e
         logging.error(e, exc_info=True)
@@ -233,9 +308,14 @@ def fit(epochs: int, model: nn.Module, loss_func: LossFunction, opt: optim.Optim
         cb_handler.on_train_end(exception)
 
 
-def loss_batch(model: nn.Module, xb: Tensor, yb: Tensor, loss_func: OptionalLossFunction = None,
-               opt: OptionalOptimizer = None,
-               cb_handler: Optional[CallbackHandler] = None) -> Tuple[Union[Tensor, int, float, str]]:
+def loss_batch(
+    model: nn.Module,
+    xb: Tensor,
+    yb: Tensor,
+    loss_func: OptionalLossFunction = None,
+    opt: OptionalOptimizer = None,
+    cb_handler: Optional[CallbackHandler] = None,
+) -> Tuple[Union[Tensor, int, float, str]]:
     "Calculate loss and metrics for a batch, call out to callbacks as necessary."
     cb_handler = if_none(cb_handler, CallbackHandler())
     if not is_listy(xb):
@@ -260,10 +340,15 @@ def loss_batch(model: nn.Module, xb: Tensor, yb: Tensor, loss_func: OptionalLoss
     return loss.detach().cpu()
 
 
-def validate(model: nn.Module, dl: DataLoader, loss_func: OptionalLossFunction = None,
-             cb_handler: Optional[CallbackHandler] = None,
-             pbar: Optional[PBar] = None, average=True, n_batch: Optional[int] = None) -> Iterator[
-    Tuple[Union[Tensor, int], ...]]:
+def validate(
+    model: nn.Module,
+    dl: DataLoader,
+    loss_func: OptionalLossFunction = None,
+    cb_handler: Optional[CallbackHandler] = None,
+    pbar: Optional[PBar] = None,
+    average=True,
+    n_batch: Optional[int] = None,
+) -> Iterator[Tuple[Union[Tensor, int], ...]]:
     "Calculate loss and metrics for the validation set."
     model.eval()
     with torch.no_grad():
@@ -271,7 +356,9 @@ def validate(model: nn.Module, dl: DataLoader, loss_func: OptionalLossFunction =
         for xb, yb in progress_bar(dl, parent=pbar, leave=(pbar is not None)):
             if cb_handler:
                 xb, yb = cb_handler.on_batch_begin(xb, yb, train=False, phase=Phase.VAL)
-            val_losses.append(loss_batch(model, xb, yb, loss_func, cb_handler=cb_handler))
+            val_losses.append(
+                loss_batch(model, xb, yb, loss_func, cb_handler=cb_handler)
+            )
             if not is_listy(yb):
                 yb = [yb]
             nums.append(yb[0].shape[0])

@@ -41,7 +41,9 @@ class ArcFaceLoss(BaseLoss):
         """
         cosine = out
         labels = yb[0]
-        loss = arc_face_loss(cosine, labels, self.cos_m, self.sin_m, self.th, self.mm, self.scale)
+        loss = arc_face_loss(
+            cosine, labels, self.cos_m, self.sin_m, self.th, self.mm, self.scale
+        )
         self._unreduced_loss = loss
         self._per_sample_loss = loss
         self._reduced_loss = self._per_sample_loss.mean()
@@ -63,7 +65,9 @@ def arc_face_loss(cosine, labels, cos_m, sin_m, th, mm, scale):
     # -------------torch.where(out_i = {x_i if condition_i else y_i) -------------
     output = (one_hot_labels * cosine_with_margin) + ((1.0 - one_hot_labels) * cosine)
     output *= scale
-    labels = torch.from_numpy(np.where(to_numpy(labels) == 1)[1]).to(default_hardware.device)
+    labels = torch.from_numpy(np.where(to_numpy(labels) == 1)[1]).to(
+        default_hardware.device
+    )
     loss1 = nn.CrossEntropyLoss(reduce=False)(output, labels)
     loss2 = nn.CrossEntropyLoss(reduce=False)(cosine, labels)
     gamma = 1
@@ -88,7 +92,7 @@ class ArcMarginProduct(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self):
-        stdv = 1. / math.sqrt(self.weight.size(1))
+        stdv = 1.0 / math.sqrt(self.weight.size(1))
         self.weight.data.uniform_(-stdv, stdv)
 
     def forward(self, features):

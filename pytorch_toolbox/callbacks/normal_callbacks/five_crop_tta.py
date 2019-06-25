@@ -13,7 +13,7 @@ class FiveCropTTACallback(Callback):
 
     aggregate_fns = {
         "MAX": partial(torch.max, dim=1),
-        "MEAN": partial(torch.mean, dim=1)
+        "MEAN": partial(torch.mean, dim=1),
     }
 
     def __init__(self, aggregate_mode="MAX"):
@@ -34,7 +34,9 @@ class FiveCropTTACallback(Callback):
         if phase is not Phase.TRAIN:
             batch_size, n_crops, *other_dims = self.last_input_shape
             last_output_reshaped = last_output.view(batch_size, n_crops, -1)
-            aggregated_last_output, _ = self.aggregate_fns[self.aggregate_mode](last_output_reshaped)
+            aggregated_last_output, _ = self.aggregate_fns[self.aggregate_mode](
+                last_output_reshaped
+            )
             return aggregated_last_output
         else:
             return last_output

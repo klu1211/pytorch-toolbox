@@ -9,5 +9,5 @@ metric_lookup = {
     "accuracy": accuracy,
     "f1_soft": partial(soft_f_score_metric, beta=1),
     "focal_loss": focal_loss_metric,
-    "soft_dice_loss": soft_dice_loss_metric
+    "soft_dice_loss": soft_dice_loss_metric,
 }
