@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import Collection, Any
+from typing import Collection
 from pathlib import Path
 
 import numpy as np
@@ -29,9 +29,7 @@ class BaseRecorder(LearnerCallback):
         self.opt = self.learn.opt
         self.train_dl = self.learn.data.train_dl
 
-    def on_train_begin(
-        self, pbar: PBar, metrics_names: Collection[str], **kwargs: Any
-    ) -> None:
+    def on_train_begin(self, pbar: PBar, metrics_names: Collection[str], **kwargs) -> None:
         "Initialize recording status at beginning of training."
         self.pbar = pbar
         self.names = ["epoch", "train_loss", "valid_loss"] + metrics_names
@@ -47,13 +45,13 @@ class BaseRecorder(LearnerCallback):
             [],
         )
 
-    def on_batch_begin(self, train, **kwargs: Any) -> None:
+    def on_batch_begin(self, train, **kwargs) -> None:
         "Record learning rate and momentum at beginning of batch."
         if train:
             self.lrs.append(self.opt.lr)
             self.moms.append(self.opt.mom)
 
-    def on_backward_begin(self, smooth_loss: Tensor, **kwargs: Any) -> None:
+    def on_backward_begin(self, smooth_loss: Tensor, **kwargs) -> None:
         "Record the loss before any other callback has a chance to modify it."
         self.losses.append(smooth_loss)
         if self.pbar is not None and hasattr(self.pbar, "child"):
@@ -65,7 +63,7 @@ class BaseRecorder(LearnerCallback):
         num_batch: int,
         smooth_loss: Tensor,
         last_metrics=MetricsList,
-        **kwargs: Any,
+        **kwargs,
     ) -> bool:
         "Save epoch info: num_batch, smooth_loss, metrics."
         self.nb_batches.append(num_batch)
@@ -109,9 +107,7 @@ class BaseRecorder(LearnerCallback):
         "Plot learning rate and losses, trimmed between `skip_start` and `skip_end`."
         lrs = self.lrs[skip_start:-skip_end] if skip_end > 0 else self.lrs[skip_start:]
         losses = (
-            self.losses[skip_start:-skip_end]
-            if skip_end > 0
-            else self.losses[skip_start:]
+            self.losses[skip_start:-skip_end] if skip_end > 0 else self.losses[skip_start:]
         )
         _, ax = plt.subplots(1, 1)
         ax.plot(lrs, losses)
@@ -175,11 +171,11 @@ class Recorder(BaseRecorder):
         per_sample_loss_values_for_current_batch = dict()
         all_losses = []
         for loss in self.learn.loss_func.losses:
-            name = f"{phase.name}/{camel2snake(loss.__class__.__name__)}"
+            name = f"{phase.name}-{camel2snake(loss.__class__.__name__)}"
             per_sample_loss = to_numpy(loss.per_sample_loss)
             per_sample_loss_values_for_current_batch[name] = per_sample_loss
             all_losses.append(per_sample_loss)
-        total_loss_name = f"{phase.name}/total_loss"
+        total_loss_name = f"{phase.name}-total_loss"
         per_sample_loss_values_for_current_batch[total_loss_name] = np.sum(
             all_losses, axis=0
         )
@@ -190,9 +186,7 @@ class Recorder(BaseRecorder):
         for name, loss_value in loss_for_current_batch.items():
             self.loss_history[self.key][name].extend(loss_value)
 
-    def on_epoch_end(
-        self, epoch, num_batch, smooth_loss, last_metrics, phase, **kwargs
-    ):
+    def on_epoch_end(self, epoch, num_batch, smooth_loss, last_metrics, phase, **kwargs):
         super().on_epoch_end(epoch, num_batch, smooth_loss, last_metrics, **kwargs)
         metric_names = self.names[3:]
         if phase == Phase.VAL and len(metric_names) > 0:
@@ -202,31 +196,21 @@ class Recorder(BaseRecorder):
     def get_losses_and_metrics_for_epoch(self, epoch, with_mean=True):
         losses_and_metrics = {}
         losses_and_metrics.update(
-            **self.get_losses_for_epoch_with_phase(
-                epoch, Phase.TRAIN, with_mean=with_mean
-            )
+            **self.get_losses_for_epoch_with_phase(epoch, Phase.TRAIN, with_mean=with_mean)
         )
         losses_and_metrics.update(
-            **self.get_losses_for_epoch_with_phase(
-                epoch, Phase.VAL, with_mean=with_mean
-            )
+            **self.get_losses_for_epoch_with_phase(epoch, Phase.VAL, with_mean=with_mean)
         )
-        losses_and_metrics.update(
-            **self.get_metrics_for_epoch(epoch, with_mean=with_mean)
-        )
+        losses_and_metrics.update(**self.get_metrics_for_epoch(epoch, with_mean=with_mean))
         return losses_and_metrics
 
     def get_losses_for_epoch(self, epoch, with_mean=True):
         losses = {}
         losses.update(
-            **self.get_losses_for_epoch_with_phase(
-                epoch, Phase.TRAIN, with_mean=with_mean
-            )
+            **self.get_losses_for_epoch_with_phase(epoch, Phase.TRAIN, with_mean=with_mean)
         )
         losses.update(
-            **self.get_losses_for_epoch_with_phase(
-                epoch, Phase.VAL, with_mean=with_mean
-            )
+            **self.get_losses_for_epoch_with_phase(epoch, Phase.VAL, with_mean=with_mean)
         )
         return losses
 
@@ -253,11 +237,7 @@ class TensorBoardRecorder(LearnerCallback):
     _order = 10
 
     def __init__(
-        self,
-        learn,
-        save_path_creator: Optional[Callable],
-        file_name="tensorboard",
-        per_batch=False,
+        self, learn, save_path_creator: Optional[Callable], file_name="tensorboard"
     ):
         super().__init__(learn)
         log_path = (
@@ -270,7 +250,6 @@ class TensorBoardRecorder(LearnerCallback):
         self.tb_writer = SummaryWriter(log_dir=str(log_path))
         self.train_step_idx = 0
         self.val_step_idx = 0
-        self.per_batch = per_batch
 
     def on_batch_end(self, epoch, phase, **kwargs):
         if phase == Phase.TRAIN:
@@ -300,9 +279,7 @@ class TensorBoardRecorder(LearnerCallback):
                     ] = beta_2
 
             else:
-                for layer_idx, layer_group_val in enumerate(
-                    optimizer.read_val(hp_name)
-                ):
+                for layer_idx, layer_group_val in enumerate(optimizer.read_val(hp_name)):
                     optimizer_hyperparameters_tag_scalar_dict[
                         f"layer_{layer_idx}-{hp_name}"
                     ] = layer_group_val
@@ -354,8 +331,10 @@ class MLFlowRecorder(LearnerCallback):
             f"To see experiment:\nmlflow ui --backend-store-uri {str(Path(experiment_path).resolve())} --port 5000"
         )
         mlflow.set_tracking_uri(str(experiment_path))
+        self.train_step_idx = 0
+        self.val_step_idx = 0
 
-    def on_train_begin(self, **kwargs: Any):
+    def on_train_begin(self, **kwargs):
         mlflow.start_run()
         self._record_params()
 
@@ -368,11 +347,74 @@ class MLFlowRecorder(LearnerCallback):
                 for name, value in variables.items():
                     mlflow.log_param(f"{variable_group}.{name}", value)
 
-    def on_train_end(self, epoch, **kwargs: Any):
-        self._record_metrics(epoch - 1)
-        mlflow.end_run()
+    def on_batch_end(self, epoch, phase, **kwargs):
+        if phase == Phase.TRAIN:
+            self._record_optimizer_hyperparameters_for_step(self.train_step_idx)
+            self._record_losses_for_step(phase, self.train_step_idx)
+            self.train_step_idx += 1
+        if phase == Phase.VAL:
+            self._record_losses_for_step(phase, self.val_step_idx)
+            self.val_step_idx += 1
 
-    def _record_metrics(self, epoch):
+    def _record_optimizer_hyperparameters_for_step(self, step_idx):
+        optimizer_hyperparameters_name_and_value = (
+            self._read_optimizer_hyperparameter_values()
+        )
+
+        for name, value in optimizer_hyperparameters_name_and_value.items():
+            mlflow.log_metric(name, value, step_idx)
+
+    def _read_optimizer_hyperparameter_values(self):
+        optimizer = self.learn.opt
+        available_optimizer_hyperparameters = optimizer.available_hyperparameters
+        optimizer_hyperparameters_name_and_value = {}
+
+        for hp_name in available_optimizer_hyperparameters:
+            if hp_name == "betas":
+                beta_1_for_layers, beta_2_for_layers = optimizer.read_val(hp_name)
+                for layer_idx, (beta_1, beta_2) in enumerate(
+                    zip(beta_1_for_layers, beta_2_for_layers)
+                ):
+                    optimizer_hyperparameters_name_and_value[
+                        f"layer_{layer_idx}-beta1"
+                    ] = beta_1
+                    optimizer_hyperparameters_name_and_value[
+                        f"layer_{layer_idx}-beta2"
+                    ] = beta_2
+
+            else:
+                for layer_idx, layer_group_val in enumerate(optimizer.read_val(hp_name)):
+                    optimizer_hyperparameters_name_and_value[
+                        f"layer_{layer_idx}-{hp_name}"
+                    ] = layer_group_val
+        return optimizer_hyperparameters_name_and_value
+
+    def _record_losses_for_step(self, phase, step_idx):
+        losses_name_and_value = self._read_loss_values()
+        for name, value in losses_name_and_value.items():
+            mlflow.log_metric(name, value, step_idx)
+
+    def _read_loss_values(self):
+        losses_name_and_value = {
+            loss_name: np.mean(loss_values)
+            for loss_name, loss_values in self.learn.recorder.loss_for_current_batch.items()
+        }
+        return losses_name_and_value
+
+    def on_epoch_end(self, epoch, phase, **kwargs):
+        prev_epoch = epoch - 1
+        self._record_mean_losses_for_epoch(prev_epoch)
+        self._record_metrics_for_epoch(prev_epoch)
+
+    def _record_mean_losses_for_epoch(self, epoch):
+        losses = self.learn.recorder.get_losses_for_epoch(epoch)
+        for name, value in losses.items():
+            mlflow.log_metric(name, value, epoch)
+
+    def _record_metrics_for_epoch(self, epoch):
         metrics = self.learn.recorder.get_metrics_for_epoch(epoch)
         for name, value in metrics.items():
-            mlflow.log_metric(name, value)
+            mlflow.log_metric(name, value, epoch)
+
+    def on_train_end(self, epoch, **kwargs):
+        mlflow.end_run()

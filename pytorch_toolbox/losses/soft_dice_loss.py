@@ -78,9 +78,7 @@ def multi_class_dice_loss(pred_logits, targets, n_classes):
     one_hot = torch.FloatTensor(
         targets.size(0), n_classes, targets.size(2), targets.size(3)
     ).zero_()
-    target_one_hot = one_hot.scatter_(1, targets.cpu().data, 1).to(
-        default_hardware.device
-    )
+    target_one_hot = one_hot.scatter_(1, targets.cpu().data, 1).to(default_hardware.device)
     pred_probs = F.softmax(pred_logits, dim=1)
     batch_size = pred_logits.size(0)
     loss_dict = defaultdict(list)
@@ -100,6 +98,5 @@ def single_class_dice_loss(inputs, one_hots):
     one_hots_flat = one_hots.contiguous().view(-1)
     intersection = torch.sum(inputs_flat * one_hots_flat)
     return 1 - (
-        (2 * intersection + 1.0)
-        / (torch.sum(inputs_flat) + torch.sum(one_hots_flat) + 1.0)
+        (2 * intersection + 1.0) / (torch.sum(inputs_flat) + torch.sum(one_hots_flat) + 1.0)
     )

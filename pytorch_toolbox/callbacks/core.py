@@ -198,7 +198,7 @@ class LearnerCallback(Callback):
 class TrackerCallback(LearnerCallback):
     "A `LearnerCallback` that keeps track of the best value in `monitor`."
 
-    def __init__(self, learn, monitor="VAL/total_loss", mode="auto"):
+    def __init__(self, learn, monitor="VAL-total_loss", mode="auto"):
         super().__init__(learn)
         self.monitor = monitor
         self.mode = mode

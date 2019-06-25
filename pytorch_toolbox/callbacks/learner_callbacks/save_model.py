@@ -12,7 +12,7 @@ class SaveModelCallback(TrackerCallback):
         self,
         learn,
         save_path_creator: Optional[Callable],
-        monitor: str = "VAL/total_loss",
+        monitor: str = "VAL-total_loss",
         mode: str = "auto",
         every: str = "improvement",
         file_name: str = "best_model",
