@@ -1,3 +1,5 @@
+import numpy as np
+
 from pytorch_toolbox.callbacks import (
     CallbackList,
     LRFinder,
@@ -5,7 +7,16 @@ from pytorch_toolbox.callbacks import (
     MixedPrecision,
     MultiStepScheduler,
 )
-from pytorch_toolbox.defaults import *
+from pytorch_toolbox.defaults import (
+    Union,
+    Floats,
+    Tuple,
+    Optional,
+    List,
+    Number,
+    Any,
+    default_lr,
+)
 from pytorch_toolbox.utils import if_none, is_listy
 from pytorch_toolbox.utils.training import model2half
 
@@ -26,12 +37,7 @@ def fit_one_cycle(
     callbacks = if_none(callbacks, [])
     callbacks.append(
         OneCycleScheduler(
-            learn,
-            max_lr,
-            moms=moms,
-            div_factor=div_factor,
-            pct_start=pct_start,
-            **kwargs
+            learn, max_lr, moms=moms, div_factor=div_factor, pct_start=pct_start, **kwargs
         )
     )
     learn.fit(cyc_len, max_lr, wd=wd, callbacks=callbacks)
