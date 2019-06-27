@@ -33,9 +33,7 @@ class TrainingPhase:
 class GeneralScheduler(Callback):
     "Schedule multiple `TrainingPhase` for a `Learner`."
 
-    def __init__(
-        self, learn, phases: Collection[TrainingPhase], start_epoch: int = None
-    ):
+    def __init__(self, learn, phases: Collection[TrainingPhase], start_epoch: int = None):
         super().__init__()
         self.learn = learn
         self.phases, self.start_epoch = phases, start_epoch
@@ -130,9 +128,7 @@ class MultiStepScheduler(GeneralScheduler):
         epochs_between_each_step = [10, 30, 50, 80] - [0, 10, 30, 50] = [10, 20, 20, 30]
         :return:
         """
-        epochs_for_step_with_end_epoch = np.array(
-            self.epochs_for_step + [self.end_epoch]
-        )
+        epochs_for_step_with_end_epoch = np.array(self.epochs_for_step + [self.end_epoch])
         epochs_between_each_step = epochs_for_step_with_end_epoch[1:] - np.array(
             self.epochs_for_step
         )

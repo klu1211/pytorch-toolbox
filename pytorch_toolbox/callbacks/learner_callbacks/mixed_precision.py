@@ -3,9 +3,7 @@ from torch.nn.utils import parameters_to_vector
 
 from pytorch_toolbox.callbacks import Callback
 from pytorch_toolbox.defaults import *
-from pytorch_toolbox.utils.training import (
-    split_layers_into_batch_norm_and_non_batch_norm,
-)
+from pytorch_toolbox.utils.training import split_layers_into_batch_norm_and_non_batch_norm
 
 
 def get_master(
@@ -14,8 +12,7 @@ def get_master(
     "Return two lists, one for the model parameters in FP16 and one for the master parameters in FP32."
     split_groups = split_layers_into_batch_norm_and_non_batch_norm(layer_groups)
     model_params = [
-        [param for param in lg.parameters() if param.requires_grad]
-        for lg in split_groups
+        [param for param in lg.parameters() if param.requires_grad] for lg in split_groups
     ]
     if flat_master:
         master_params = []
@@ -72,8 +69,7 @@ def master2model(
         for model_group, master_group in zip(model_params, master_params):
             if len(model_group) != 0:
                 for model, master in zip(
-                    model_group,
-                    _unflatten_dense_tensors(master_group[0].data, model_group),
+                    model_group, _unflatten_dense_tensors(master_group[0].data, model_group)
                 ):
                     model.data.copy_(master)
     else:
@@ -100,9 +96,7 @@ class MixedPrecision(Callback):
         opt = self.learn.opt
         mom, wd, beta = opt.mom, opt.wd, opt.beta
         lrs = [lr for lr in self.learn.opt._lr for _ in range(2)]
-        opt_params = [
-            {"params": mp, "lr": lr} for mp, lr in zip(self.master_params, lrs)
-        ]
+        opt_params = [{"params": mp, "lr": lr} for mp, lr in zip(self.master_params, lrs)]
         self.learn.opt.opt = self.learn.opt_func(opt_params)
         opt.mom, opt.wd, opt.beta = mom, wd, beta
 

@@ -35,9 +35,7 @@ class BasicConv(nn.Module):
             bias=bias,
         )
         self.bn = (
-            nn.BatchNorm2d(out_planes, eps=1e-5, momentum=0.01, affine=True)
-            if bn
-            else None
+            nn.BatchNorm2d(out_planes, eps=1e-5, momentum=0.01, affine=True) if bn else None
         )
         self.relu = nn.ReLU() if relu else None
 
@@ -131,11 +129,7 @@ class SpatialGate(nn.Module):
 
 class CBAM(nn.Module):
     def __init__(
-        self,
-        gate_channels,
-        reduction_ratio=16,
-        pool_types=["avg", "max"],
-        no_spatial=False,
+        self, gate_channels, reduction_ratio=16, pool_types=["avg", "max"], no_spatial=False
     ):
         super(CBAM, self).__init__()
         self.ChannelGate = ChannelGate(gate_channels, reduction_ratio, pool_types)

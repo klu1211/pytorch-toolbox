@@ -3,13 +3,7 @@ from typing import Optional
 import torch
 from torch import nn, Tensor
 
-from pytorch_toolbox.defaults import (
-    Tensors,
-    default_hardware,
-    ModuleList,
-    ParamList,
-    List,
-)
+from pytorch_toolbox.defaults import Tensors, default_hardware, ModuleList, ParamList, List
 from pytorch_toolbox.utils import if_none, is_listy
 
 
@@ -42,9 +36,7 @@ def children(m: nn.Module) -> ModuleList:
     return list(m.children())
 
 
-def split_layers_into_batch_norm_and_non_batch_norm(
-    layer_groups: ModuleList
-) -> ModuleList:
+def split_layers_into_batch_norm_and_non_batch_norm(layer_groups: ModuleList) -> ModuleList:
     "Sort each layer in  `layer_groups` into batchnorm (`bn_types`) and non-batchnorm groups."
     split_groups = []
     for l in layer_groups:

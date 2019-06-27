@@ -61,9 +61,7 @@ def test_find_references():
                 }
             },
             "Group_B": {
-                "Resource_B": {
-                    "properties": Reference(ref_node_name="B", output_name="B")
-                }
+                "Resource_B": {"properties": Reference(ref_node_name="B", output_name="B")}
             },
             "Resource_C": {"properties": Reference(ref_node_name="C", output_name="C")},
         }

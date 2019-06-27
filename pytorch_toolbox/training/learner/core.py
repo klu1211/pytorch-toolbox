@@ -29,14 +29,7 @@ from pytorch_toolbox.defaults import (
     OptionalOptimizer,
 )
 from pytorch_toolbox.training import OptimizerWrapper
-from pytorch_toolbox.utils import (
-    listify,
-    if_none,
-    is_listy,
-    to_numpy,
-    even_mults,
-    Phase,
-)
+from pytorch_toolbox.utils import listify, if_none, is_listy, to_numpy, even_mults, Phase
 from pytorch_toolbox.utils.training import flatten_model, to_detach, requires_grad
 
 AdamW = partial(Adam, betas=(0.9, 0.99))
@@ -151,9 +144,7 @@ class Learner:
                     print(p.shape)
                     print(p.requires_grad)
 
-    def _predict_on_dl(
-        self, dl, phase, callbacks=None, callback_fns=None, metrics=None
-    ):
+    def _predict_on_dl(self, dl, phase, callbacks=None, callback_fns=None, metrics=None):
         assert dl is not None, "A dataloader must be provided"
         assert (
             phase is not None
@@ -356,9 +347,7 @@ def validate(
         for xb, yb in progress_bar(dl, parent=pbar, leave=(pbar is not None)):
             if cb_handler:
                 xb, yb = cb_handler.on_batch_begin(xb, yb, train=False, phase=Phase.VAL)
-            val_losses.append(
-                loss_batch(model, xb, yb, loss_func, cb_handler=cb_handler)
-            )
+            val_losses.append(loss_batch(model, xb, yb, loss_func, cb_handler=cb_handler))
             if not is_listy(yb):
                 yb = [yb]
             nums.append(yb[0].shape[0])

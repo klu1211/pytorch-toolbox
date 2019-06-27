@@ -9,9 +9,7 @@ from pytorch_toolbox.callbacks import TrackerCallback
 class ReduceLROnPlateauCallback(TrackerCallback):
     "A `TrackerCallback` that reduces learning rate when a metric has stopped improving."
 
-    def __init__(
-        self, learn, patient: int = 0, factor: float = 0.2, min_delta: int = 0
-    ):
+    def __init__(self, learn, patient: int = 0, factor: float = 0.2, min_delta: int = 0):
         super.__init__(learn)
         self.patient = patient
         self.factor = factor

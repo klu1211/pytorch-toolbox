@@ -45,10 +45,7 @@ class DeviceDataLoader:
         self.dl.num_workers = num_workers
 
     def __init__(
-        self,
-        dl: DataLoader,
-        device: torch.device,
-        collate_fn: Callable = default_collate,
+        self, dl: DataLoader, device: torch.device, collate_fn: Callable = default_collate
     ):
         self.dl = dl
         self.device = device
@@ -121,8 +118,6 @@ class DataBunch:
         if test_ds is None:
             test_dl = None
         else:
-            test_dl = DataLoader(
-                test_ds, test_bs, shuffle=False, num_workers=num_workers
-            )
+            test_dl = DataLoader(test_ds, test_bs, shuffle=False, num_workers=num_workers)
         dls = [train_dl, val_dl, test_dl]
         return cls(*dls, device=device, collate_fn=collate_fn)

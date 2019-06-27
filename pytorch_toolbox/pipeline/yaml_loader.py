@@ -131,6 +131,4 @@ def dump_config_to_string(config):
 
 def dump_config_to_path(config, save_path):
     with save_path.open("w") as yaml_file:
-        yaml.dump(
-            config, yaml_file, Dumper=PyTorchToolboxDumper, default_flow_style=False
-        )
+        yaml.dump(config, yaml_file, Dumper=PyTorchToolboxDumper, default_flow_style=False)

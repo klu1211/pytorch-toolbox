@@ -1,12 +1,7 @@
 import numpy as np
 
 from pytorch_toolbox.defaults import Floats, StartOptEnd, Any
-from pytorch_toolbox.callbacks import (
-    Callback,
-    annealing_linear,
-    annealing_cos,
-    Scheduler,
-)
+from pytorch_toolbox.callbacks import Callback, annealing_linear, annealing_cos, Scheduler
 from pytorch_toolbox.utils import listify, is_listy, Phase
 
 

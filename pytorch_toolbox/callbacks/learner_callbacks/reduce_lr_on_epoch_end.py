@@ -25,9 +25,7 @@ class ReduceLROnEpochEndCallback(TrackerCallback):
         self.lr_history = None
 
     def _wait_for_user_prompt_to_change_lr(self):
-        print(
-            f"Waiting for {self.wait_duration} seconds keyboard interrupt to change LR"
-        )
+        print(f"Waiting for {self.wait_duration} seconds keyboard interrupt to change LR")
         time.sleep(self.wait_duration)
 
     def _user_input_prompt_for_new_lr(self):

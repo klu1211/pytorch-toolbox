@@ -114,15 +114,11 @@ class ResNet(nn.Module):
         self.network_type = network_type
         # different model config between ImageNet and CIFAR
         if network_type == "ImageNet":
-            self.conv1 = nn.Conv2d(
-                3, 64, kernel_size=7, stride=2, padding=3, bias=False
-            )
+            self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
             self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
             self.avgpool = nn.AvgPool2d(7)
         else:
-            self.conv1 = nn.Conv2d(
-                3, 64, kernel_size=3, stride=1, padding=1, bias=False
-            )
+            self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
 
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
@@ -135,15 +131,9 @@ class ResNet(nn.Module):
             self.bam1, self.bam2, self.bam3 = None, None, None
 
         self.layer1 = self._make_layer(block, 64, layers[0], att_type=att_type)
-        self.layer2 = self._make_layer(
-            block, 128, layers[1], stride=2, att_type=att_type
-        )
-        self.layer3 = self._make_layer(
-            block, 256, layers[2], stride=2, att_type=att_type
-        )
-        self.layer4 = self._make_layer(
-            block, 512, layers[3], stride=2, att_type=att_type
-        )
+        self.layer2 = self._make_layer(block, 128, layers[1], stride=2, att_type=att_type)
+        self.layer3 = self._make_layer(block, 256, layers[2], stride=2, att_type=att_type)
+        self.layer4 = self._make_layer(block, 512, layers[3], stride=2, att_type=att_type)
 
         self.fc = nn.Linear(512 * block.expansion, num_classes)
 
@@ -176,9 +166,7 @@ class ResNet(nn.Module):
 
         layers = []
         layers.append(
-            block(
-                self.inplanes, planes, stride, downsample, use_cbam=att_type == "CBAM"
-            )
+            block(self.inplanes, planes, stride, downsample, use_cbam=att_type == "CBAM")
         )
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):

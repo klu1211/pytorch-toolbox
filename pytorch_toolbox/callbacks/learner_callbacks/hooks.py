@@ -10,9 +10,7 @@ from pytorch_toolbox.defaults import Tensor, Tensors, Collection, Sequence, Hook
 class HookCallback(LearnerCallback):
     "Callback that can be used to register hooks on `modules`. Implement the corresponding function in `self.hook`."
 
-    def __init__(
-        self, learn, modules: Sequence[nn.Module] = None, do_remove: bool = True
-    ):
+    def __init__(self, learn, modules: Sequence[nn.Module] = None, do_remove: bool = True):
         super().__init__(learn)
         self.modules, self.do_remove = modules, do_remove
 
@@ -83,11 +81,7 @@ class Hook:
     "Create a hook on `m` with `hook_func`."
 
     def __init__(
-        self,
-        m: nn.Module,
-        hook_fn: HookFunc,
-        is_forward: bool = True,
-        detach: bool = True,
+        self, m: nn.Module, hook_fn: HookFunc, is_forward: bool = True, detach: bool = True
     ):
         self.hook_fn, self.detach, self.stored = hook_fn, detach, None
         register_hook_fn = (
@@ -100,9 +94,7 @@ class Hook:
         "Applies `hook_func` to `module`, `input`, `output`."
         if self.detach:
             input = (o.detach() for o in input) if is_listy(input) else input.detach()
-            output = (
-                (o.detach() for o in output) if is_listy(output) else output.detach()
-            )
+            output = (o.detach() for o in output) if is_listy(output) else output.detach()
         self.stored = self.hook_fn(module, input, output)
 
     def remove(self):

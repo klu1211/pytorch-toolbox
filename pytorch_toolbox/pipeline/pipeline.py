@@ -29,9 +29,7 @@ class Pipeline:
         return cls(graph, config, state_dict)
 
     @classmethod
-    def create_from_config_path(
-        cls, config_path, lookup, with_variable_replacement=True
-    ):
+    def create_from_config_path(cls, config_path, lookup, with_variable_replacement=True):
         raw_config = load_config_from_path(config_path)
         replaced_config = load_config_from_path(
             config_path, with_variable_replacement=with_variable_replacement
@@ -48,9 +46,7 @@ class Pipeline:
                 "properties" in resource
             ), f"The properties key isn't defined for node: {name}"
             references = find_references(resource)
-            properties = load_properties_with_default_values(
-                resource["properties"], lookup
-            )
+            properties = load_properties_with_default_values(resource["properties"], lookup)
             node = Node(name=name, references=references, **properties)
             graph.add_node(name, node=node)
         return graph
@@ -137,9 +133,7 @@ class Pipeline:
     def _replace_node_argument_references(self, node):
         logging.debug(f"Replacing references for node: {node.name}")
         logging.debug(f"Original arguments: {node.arguments}")
-        reference_replaced_arguments = replace_arguments(
-            self.graph, self.state_dict, node
-        )
+        reference_replaced_arguments = replace_arguments(self.graph, self.state_dict, node)
         node.reference_replaced_arguments.update(**reference_replaced_arguments)
         logging.debug(f"Replaced arguments: {node.reference_replaced_arguments}")
 
@@ -199,9 +193,7 @@ class Node:
                 iterable_output = [output] if len(self.output_names) == 1 else output
                 self.output = {
                     output_name: output_value
-                    for output_name, output_value in zip(
-                        self.output_names, iterable_output
-                    )
+                    for output_name, output_value in zip(self.output_names, iterable_output)
                 }
 
 

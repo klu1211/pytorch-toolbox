@@ -38,9 +38,7 @@ class LRFinder(LearnerCallback):
         if iteration == 0 or smooth_loss < self.best_loss:
             self.best_loss = smooth_loss
         self.opt.lr = self.scheduler.step()
-        if self.scheduler.is_done or (
-            self.stop_div and smooth_loss > 4 * self.best_loss
-        ):
+        if self.scheduler.is_done or (self.stop_div and smooth_loss > 4 * self.best_loss):
             # We use the smoothed loss to decide on the stopping since it's less shaky.
             self.stop = True
             return True

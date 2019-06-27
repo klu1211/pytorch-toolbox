@@ -1,14 +1,6 @@
 from torch import optim
 
-from pytorch_toolbox.defaults import (
-    ModuleList,
-    Floats,
-    Union,
-    Callable,
-    Tuple,
-    List,
-    Any,
-)
+from pytorch_toolbox.defaults import ModuleList, Floats, Union, Callable, Tuple, List, Any
 from pytorch_toolbox.utils import listify, is_tuple
 from pytorch_toolbox.utils.training import (
     split_layers_into_batch_norm_and_non_batch_norm,

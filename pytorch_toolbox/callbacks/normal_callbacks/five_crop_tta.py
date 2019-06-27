@@ -11,10 +11,7 @@ from pytorch_toolbox.callbacks import Callback
 class FiveCropTTACallback(Callback):
     _order = -20
 
-    aggregate_fns = {
-        "MAX": partial(torch.max, dim=1),
-        "MEAN": partial(torch.mean, dim=1),
-    }
+    aggregate_fns = {"MAX": partial(torch.max, dim=1), "MEAN": partial(torch.mean, dim=1)}
 
     def __init__(self, aggregate_mode="MAX"):
         assert aggregate_mode in self.aggregate_fns.keys()

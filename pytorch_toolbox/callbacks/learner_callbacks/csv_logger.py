@@ -2,14 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from pytorch_toolbox.defaults import (
-    StrList,
-    Any,
-    Tensor,
-    MetricsList,
-    Optional,
-    Callable,
-)
+from pytorch_toolbox.defaults import StrList, Any, Tensor, MetricsList, Optional, Callable
 from pytorch_toolbox.callbacks import LearnerCallback
 from pytorch_toolbox.utils import if_none
 
@@ -25,9 +18,7 @@ class CSVLogger(LearnerCallback):
     ):
         super().__init__(learn)
         self.learn = learn
-        path = Path(
-            self.learn.path if save_path_creator is None else save_path_creator()
-        )
+        path = Path(self.learn.path if save_path_creator is None else save_path_creator())
         self.file_name = file_name
         self.save_path = path / f"{self.file_name}.csv"
 
