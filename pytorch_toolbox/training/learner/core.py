@@ -1,6 +1,8 @@
+import logging
+from functools import partial
 from pathlib import Path
 from typing import Callable, Collection, Union, Optional, Iterator, Tuple
-from functools import partial
+
 
 import torch
 from torch import nn, optim, Tensor
