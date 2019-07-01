@@ -2,7 +2,7 @@ import logging
 import functools
 import networkx as nx
 
-from .yaml_loader import load_config_from_path, Reference
+from .yaml_loader import load_config_from_string, load_config_from_path, Reference
 from .graph_construction import (
     flatten_resources_dict,
     find_references,
@@ -27,6 +27,18 @@ class Pipeline:
         graph = cls._add_nodes_to_graph(graph, flattened_resources, lookup)
         graph = cls._add_edges_to_graph(graph)
         return cls(graph, config, state_dict)
+
+    @classmethod
+    def create_from_config_string(
+        cls, config_string, lookup, with_variable_replacement=True
+    ):
+        raw_config = load_config_from_string(config_string)
+        replaced_config = load_config_from_string(
+            config_string, with_variable_replacement=with_variable_replacement
+        )
+        return cls.create_from_config(
+            replaced_config, lookup, state_dict=dict(raw_config=raw_config)
+        )
 
     @classmethod
     def create_from_config_path(cls, config_path, lookup, with_variable_replacement=True):
