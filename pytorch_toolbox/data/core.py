@@ -77,12 +77,15 @@ class DataBunch:
         test_dl: Optional[DataLoader] = None,
         device: torch.device = None,
         collate_fn: Callable = default_collate,
+        train_collate_fn: Callable = default_collate,
+        val_collate_fn: Callable = default_collate,
+        test_collate_fn: Callable = default_collate,
     ):
         self.device = default_hardware.device if device is None else device
-        self.train_dl = DeviceDataLoader(train_dl, self.device, collate_fn)
-        self.valid_dl = DeviceDataLoader(valid_dl, self.device, collate_fn)
+        self.train_dl = DeviceDataLoader(train_dl, self.device, train_collate_fn)
+        self.valid_dl = DeviceDataLoader(valid_dl, self.device, val_collate_fn)
         self.test_dl = (
-            DeviceDataLoader(test_dl, self.device, collate_fn) if test_dl else None
+            DeviceDataLoader(test_dl, self.device, test_collate_fn) if test_dl else None
         )
 
     @classmethod
