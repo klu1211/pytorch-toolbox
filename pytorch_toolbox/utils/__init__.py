@@ -105,7 +105,7 @@ def create_time_stamped_save_path(save_path, state_dict):
     try:
         save_path = state_dict["save_path"]
     except KeyError:
-        state_dict["save_path"] = Path(save_path).resolve()
+        state_dict["save_path"] = Path(save_path)
     try:
         current_time = state_dict["start_time"]
     except KeyError:

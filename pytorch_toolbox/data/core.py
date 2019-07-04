@@ -102,6 +102,9 @@ class DataBunch:
         pin_memory: bool = False,
         device: torch.device = None,
         collate_fn: Callable = default_collate,
+        train_collate_fn: Callable = None,
+        val_collate_fn: Callable = None,
+        test_collate_fn: Callable = None,
     ) -> "DataBunch":
 
         if val_bs is None:
@@ -123,4 +126,10 @@ class DataBunch:
         else:
             test_dl = DataLoader(test_ds, test_bs, shuffle=False, num_workers=num_workers)
         dls = [train_dl, val_dl, test_dl]
-        return cls(*dls, device=device, collate_fn=collate_fn)
+        return cls(
+            *dls,
+            device=device,
+            train_collate_fn=collate_fn if train_collate_fn is None else train_collate_fn,
+            val_collate_fn=collate_fn if val_collate_fn is None else val_collate_fn,
+            test_collate_fn=collate_fn if test_collate_fn is None else test_collate_fn
+        )
