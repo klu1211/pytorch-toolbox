@@ -105,6 +105,9 @@ class DataBunch:
         train_collate_fn: Callable = None,
         val_collate_fn: Callable = None,
         test_collate_fn: Callable = None,
+        train_shuffle=True,
+        val_shuffle=False,
+        test_shuffle=False,
     ) -> "DataBunch":
 
         if val_bs is None:
@@ -118,13 +121,16 @@ class DataBunch:
             num_workers=num_workers,
             pin_memory=pin_memory,
             drop_last=True,
+            shuffle=train_shuffle,
         )
-        val_dl = DataLoader(valid_ds, val_bs, shuffle=False, num_workers=num_workers)
+        val_dl = DataLoader(valid_ds, val_bs, shuffle=val_shuffle, num_workers=num_workers)
 
         if test_ds is None:
             test_dl = None
         else:
-            test_dl = DataLoader(test_ds, test_bs, shuffle=False, num_workers=num_workers)
+            test_dl = DataLoader(
+                test_ds, test_bs, shuffle=test_shuffle, num_workers=num_workers
+            )
         dls = [train_dl, val_dl, test_dl]
         return cls(
             *dls,
