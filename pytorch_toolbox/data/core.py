@@ -108,7 +108,7 @@ class DataBunch:
         train_shuffle=True,
         val_shuffle=False,
         test_shuffle=False,
-    ) -> "DataBunch":
+    ):
 
         if val_bs is None:
             val_bs = train_bs * 2
