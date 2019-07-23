@@ -1,18 +1,27 @@
 import inspect
+import logging
 import importlib.util
+import pprint
 from pathlib import Path
 
 
-def create_lookup_with_relative_modules_from_path(path):
+def create_lookup(path, ignore_paths=[]):
     lookup = {}
-    relative_module_paths = get_module_paths_from_path(path)
-    for path in relative_module_paths:
-        lookup = {**lookup, **create_lookup_from_path(path)}
+    for p in path.glob("*"):
+        if p in ignore_paths:
+            lookup = {**lookup}
+            logging.debug(f"Ignoring file: {str(p)}")
+        elif p.suffix == ".py":
+            logging.debug(f"Found file: {str(p)} and creating lookup")
+            lookup = {**lookup, **create_lookup_from_path(p)}
+        elif p.is_dir():
+            logging.debug(f"Found folder: {str(p)}")
+            lookup = {**lookup, **create_lookup(p, ignore_paths)}
+        else:
+            logging.debug(f"Nothing here: {str(p)}")
+            lookup = {**lookup}
+    logging.debug(f"Current lookup is: {pprint.pformat(lookup)}")
     return lookup
-
-
-def get_module_paths_from_path(path):
-    return (p for p in path.glob("*") if (p.stem not in ["__init__", "__pycache__"]))
 
 
 def create_lookup_from_path(path):
@@ -65,4 +74,3 @@ def load_classes_from_modules(module):
         return class_names, class_pointers
     except ValueError:  # if there are no classes defined
         return (), ()
-
