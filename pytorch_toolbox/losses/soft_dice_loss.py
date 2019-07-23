@@ -5,7 +5,7 @@ from torch.nn import functional as F
 
 from pytorch_toolbox.defaults import default_hardware
 
-from .core import BaseLoss
+from pytorch_toolbox.losses import BaseLoss
 
 
 class SoftDiceLoss(BaseLoss):

@@ -1,8 +1,8 @@
+from functools import partial
+
 import torch
-
-from pytorch_toolbox.losses import BaseLoss
-
 from torch.nn import functional as F
+from pytorch_toolbox.losses import BaseLoss
 
 
 class SoftFScoreLoss(BaseLoss):
@@ -34,6 +34,20 @@ class SoftFScoreLoss(BaseLoss):
         )
         self._reduced_loss = self._per_sample_loss.mean()
         return self._reduced_loss
+
+
+class SoftF1Loss(SoftFScoreLoss):
+    def __init__(self, per_sample_loss_aggregate_method):
+        super().__init__(
+            beta=1, per_sample_loss_aggregate_method=per_sample_loss_aggregate_method
+        )
+
+
+class SoftF2Loss(SoftFScoreLoss):
+    def __init__(self, per_sample_loss_aggregate_method):
+        super().__init__(
+            beta=2, per_sample_loss_aggregate_method=per_sample_loss_aggregate_method
+        )
 
 
 def soft_f_score_loss(logits, labels, beta=1):

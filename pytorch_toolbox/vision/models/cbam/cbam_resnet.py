@@ -3,8 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import math
 from torch.nn import init
-from .cbam import *
-from .bam import *
+from pytorch_toolbox.vision.models.cbam import *
+from pytorch_toolbox.vision.models.cbam.bam import *
 
 
 """

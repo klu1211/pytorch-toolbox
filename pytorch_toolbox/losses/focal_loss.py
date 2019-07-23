@@ -1,4 +1,6 @@
 import logging
+from functools import partial
+
 import torch
 from torch.nn import functional as F
 import numpy as np
@@ -49,6 +51,15 @@ class FocalLoss(BaseLoss):
         )
         self._reduced_loss = self._per_sample_loss.mean()
         return self._reduced_loss
+
+
+class CrossEntropyLoss(FocalLoss):
+    def __init__(self, one_hot_encoding, per_sample_loss_aggregate_method):
+        super().__init__(
+            gamma=0,
+            one_hot_encoding=one_hot_encoding,
+            per_sample_loss_aggregate_method=per_sample_loss_aggregate_method,
+        )
 
 
 def focal_loss(input, target, gamma=2, one_hot_encoding=False):

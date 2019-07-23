@@ -6,7 +6,7 @@ from .soft_f_score_loss import SoftFScoreLoss, soft_f_score_loss
 from .focal_loss import FocalLoss, focal_loss
 from .soft_dice_loss import SoftDiceLoss, dice_loss
 
-loss_lookup = {
+lookup = {
     "ArcFaceLoss": ArcFaceLoss,
     "FocalLoss": FocalLoss,
     "CrossEntropyLoss": partial(FocalLoss, gamma=0),

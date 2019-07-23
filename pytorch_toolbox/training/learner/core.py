@@ -31,8 +31,8 @@ from pytorch_toolbox.defaults import (
     OptionalOptimizer,
 )
 from pytorch_toolbox.training import OptimizerWrapper
-from pytorch_toolbox.utils import listify, if_none, is_listy, to_numpy, even_mults, Phase
-from pytorch_toolbox.utils.training import flatten_model, to_detach, requires_grad
+from pytorch_toolbox.utils import listify, if_none, is_listy, to_numpy, even_mults
+from pytorch_toolbox.utils.training import flatten_model, to_detach, requires_grad, Phase
 
 AdamW = partial(Adam, betas=(0.9, 0.99))
 

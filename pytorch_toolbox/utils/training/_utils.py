@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Optional
 
 import torch
@@ -5,6 +6,12 @@ from torch import nn, Tensor
 
 from pytorch_toolbox.defaults import Tensors, default_hardware, ModuleList, ParamList, List
 from pytorch_toolbox.utils import if_none, is_listy
+
+
+class Phase(Enum):
+    TRAIN = 1
+    VAL = 2
+    TEST = 3
 
 
 def split_model_idx(model: nn.Module, idxs: List[int]) -> ModuleList:

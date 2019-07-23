@@ -17,7 +17,8 @@ from pytorch_toolbox.defaults import (
     Callable,
     Optional,
 )
-from pytorch_toolbox.utils import range_of, to_numpy, camel2snake, Phase
+from pytorch_toolbox.utils import range_of, to_numpy, camel2snake
+from pytorch_toolbox.utils.training import Phase
 
 
 class BaseRecorder(LearnerCallback):

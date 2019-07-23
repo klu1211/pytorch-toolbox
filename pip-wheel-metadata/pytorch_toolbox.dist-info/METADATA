@@ -7,7 +7,6 @@ Author: Kevin Lu
 Author-email: kevinyihchyunlu@gmail.com
 License: MIT
 Platform: UNKNOWN
-Requires-Dist: torch (===1.1.0)
 Requires-Dist: tensorboardx (==1.6)
 Requires-Dist: nose (==1.3.7)
 Requires-Dist: fastprogress (==0.1.15)

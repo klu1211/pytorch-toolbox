@@ -8,7 +8,8 @@ from torch import Tensor
 import numpy as np
 
 from pytorch_toolbox.defaults import PBar, MetricFuncList, StartOptEnd, AnnealFunc
-from pytorch_toolbox.utils import if_none, camel2snake, is_listy, is_tuple, Phase, listify
+from pytorch_toolbox.utils import if_none, camel2snake, is_listy, is_tuple, listify
+from pytorch_toolbox.utils.training import Phase
 
 
 class Callback:
