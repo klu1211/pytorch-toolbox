@@ -3,7 +3,7 @@ from typing import Callable, Any, Optional
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-from pytorch_toolbox.utils.training import to_device
+from pytorch_toolbox.utils import to_device
 from pytorch_toolbox.defaults import default_collate, default_hardware
 
 

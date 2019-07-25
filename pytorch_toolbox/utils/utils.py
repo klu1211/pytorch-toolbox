@@ -5,6 +5,13 @@ import re
 from pytorch_toolbox.defaults import *
 
 
+def to_device(t: Tensors, device: torch.device):
+    device = if_none(device, default_hardware.device)
+    if is_listy(t):
+        return [to_device(o, device) for o in t]
+    return t.to(device)
+
+
 def to_numpy(t):
     if isinstance(t, torch.Tensor):
         return t.cpu().data.numpy()

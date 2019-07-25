@@ -39,9 +39,12 @@ def create_lookup_from_path(path):
         lookup = create_lookup_from_module(module)
         return lookup
     except ImportError as e:  # When import fails
-        logging.warning(f"Importing of module from path: {path} has failed")
-        logging.warning(e)
-        return {}
+        if str(e) == "attempted relative import with no known parent package":
+            return {}
+        else:
+            logging.warning(f"Importing of module from path: {path} has failed")
+            logging.warning(e)
+            raise ImportError
 
 
 def load_module_from_path(path):

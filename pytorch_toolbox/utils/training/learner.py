@@ -1,6 +1,8 @@
+from pytorch_toolbox.utils import listify, str_to_float
 from pytorch_toolbox.losses import LossWrapper
 from pytorch_toolbox.defaults import default_wd
-from pytorch_toolbox.training import Learner
+
+### Learner creation
 
 
 def create_learner(
@@ -40,6 +42,8 @@ def create_learner(
     model = model_creator()
     callbacks = callbacks_creator() if callbacks_creator is not None else None
     callback_fns = callback_fns_creator() if callback_fns_creator is not None else None
+
+    from pytorch_toolbox.training import Learner
 
     learner = Learner(
         data=data,
@@ -83,3 +87,30 @@ def create_learner_callbacks(learner_callback_references):
         except TypeError:
             callback_fns.append(learn_cb_ref)
     return callback_fns
+
+
+### Training scheme wrappers:
+
+
+def training_scheme_one_cycle(learner, lr, epochs, div_factor=25):
+    lr = [float(lr_) for lr_ in listify(lr)]
+    learner.unfreeze()
+    learner.fit_one_cycle(cyc_len=epochs, max_lr=lr, div_factor=div_factor)
+
+
+def training_scheme_multi_step(
+    learner,
+    epochs_for_step_for_hyperparameters,
+    hyperparameter_names,
+    hyperparameter_values,
+    start_epoch=None,
+    end_epoch=None,
+):
+    learner.unfreeze()
+    learner.fit_multi_step(
+        epochs_for_step_for_hyperparameters,
+        hyperparameter_names,
+        str_to_float(hyperparameter_values),
+        start_epoch,
+        end_epoch,
+    )
