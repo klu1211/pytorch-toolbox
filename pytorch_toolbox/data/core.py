@@ -1,72 +1,15 @@
+from abc import ABC, abstractmethod
 from typing import Callable, Any, Optional
+from functools import partial
+from enum import Enum
+from dataclasses import dataclass
 
+import cv2
 import torch
 from torch.utils.data import Dataset, DataLoader
 
 from pytorch_toolbox.utils import to_device
 from pytorch_toolbox.defaults import default_collate, default_hardware
-
-
-class DeviceDataLoader:
-    @classmethod
-    def create(
-        cls,
-        dataset: Dataset,
-        batch_size: int = 64,
-        shuffle: bool = False,
-        device: torch.device = default_hardware.device,
-        num_workers: int = default_hardware.cpus,
-        collate_fn: Callable = default_collate,
-        **kwargs: Any
-    ):
-        dl = DataLoader(
-            dataset,
-            batch_size=batch_size,
-            shuffle=shuffle,
-            num_workers=num_workers,
-            **kwargs
-        )
-        return cls(dl, device=device, collate_fn=collate_fn)
-
-    @property
-    def batch_size(self):
-        return self.dl.batch_size
-
-    @batch_size.setter
-    def batch_size(self, batch_size):
-        self.dl.batch_size = batch_size
-
-    @property
-    def num_workers(self):
-        return self.dl.num_workers
-
-    @num_workers.setter
-    def num_workers(self, num_workers):
-        self.dl.num_workers = num_workers
-
-    def __init__(
-        self, dl: DataLoader, device: torch.device, collate_fn: Callable = default_collate
-    ):
-        self.dl = dl
-        self.device = device
-        self.dl.collate_fn = collate_fn
-
-    def proc_batch(self, batch):
-        input_ = to_device(batch[0], self.device)
-        output = {}
-        for k, v in batch[1].items():
-            if isinstance(v, torch.Tensor):
-                output[k] = to_device(v, self.device)
-            else:
-                output[k] = v
-        return input_, output
-
-    def __iter__(self):
-        for b in self.dl:
-            yield self.proc_batch(b)
-
-    def __len__(self):
-        return len(self.dl)
 
 
 class DataBunch:
@@ -139,3 +82,121 @@ class DataBunch:
             val_collate_fn=collate_fn if val_collate_fn is None else val_collate_fn,
             test_collate_fn=collate_fn if test_collate_fn is None else test_collate_fn
         )
+
+
+class DeviceDataLoader:
+    @classmethod
+    def create(
+        cls,
+        dataset: Dataset,
+        batch_size: int = 64,
+        shuffle: bool = False,
+        device: torch.device = default_hardware.device,
+        num_workers: int = default_hardware.cpus,
+        collate_fn: Callable = default_collate,
+        **kwargs: Any
+    ):
+        dl = DataLoader(
+            dataset,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            num_workers=num_workers,
+            **kwargs
+        )
+        return cls(dl, device=device, collate_fn=collate_fn)
+
+    @property
+    def batch_size(self):
+        return self.dl.batch_size
+
+    @batch_size.setter
+    def batch_size(self, batch_size):
+        self.dl.batch_size = batch_size
+
+    @property
+    def num_workers(self):
+        return self.dl.num_workers
+
+    @num_workers.setter
+    def num_workers(self, num_workers):
+        self.dl.num_workers = num_workers
+
+    def __init__(
+        self, dl: DataLoader, device: torch.device, collate_fn: Callable = default_collate
+    ):
+        self.dl = dl
+        self.device = device
+        self.dl.collate_fn = collate_fn
+
+    def proc_batch(self, batch):
+        input_ = to_device(batch[0], self.device)
+        output = {}
+        for k, v in batch[1].items():
+            if isinstance(v, torch.Tensor):
+                output[k] = to_device(v, self.device)
+            else:
+                output[k] = v
+        return input_, output
+
+    def __iter__(self):
+        for b in self.dl:
+            yield self.proc_batch(b)
+
+    def __len__(self):
+        return len(self.dl)
+
+
+class Data(ABC):
+    def __init__(
+        self,
+        data=None,
+        path=None,
+        should_cache=True,
+        load_fn=partial(cv2.imread, cv2.IMREAD_UNCHANGED),
+    ):
+        self._data = data
+        self.path = path
+        self.should_cache = should_cache
+        assert not (
+            data is None and path is None
+        ), "Both the data and the path to the data can't be none, you must define one"
+        self.load_fn = load_fn
+
+    @property
+    def data(self):
+        return self._load_if_needed_then_cache()
+
+    def _load_if_needed_then_cache(self):
+        if self._data is None:
+            data = self.load_fn(self.path)
+            if self.should_cache:
+                self._data = data
+            return np.array(data)
+        else:
+            return self._data
+
+
+class Image(Data):
+    pass
+
+
+class Label(Data):
+    pass
+
+
+class Mask(Data):
+    pass
+
+
+class ElementType(Enum):
+    INPUT = 1
+    OUTPUT = 2
+    AUXILLARY = 3
+
+
+@dataclass
+class BatchElement:
+    name: str
+    data: Data
+    element_type: ElementType
+    cudarizable: bool = False

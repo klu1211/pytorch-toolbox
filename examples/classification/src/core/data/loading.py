@@ -1,13 +1,5 @@
 from pathlib import Path
-
-try:
-    from .utils import Image, Label
-except ImportError:
-    from utils import Image, Label
-
-
-class Hello:
-    pass
+from pytorch_toolbox.data.image.types import Image, Label
 
 
 def load_images_and_labels(root_data_path):
